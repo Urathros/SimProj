@@ -1,4 +1,7 @@
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.UIElements;
 using static UnityEngine.InputSystem.InputAction;
 
 [RequireComponent(typeof(Camera))]
@@ -14,6 +17,10 @@ public class CameraController : MonoBehaviour, IReflectable
     [field: SerializeField]
     public InputController Input { get; set; } = null;
 
+    [Inject]
+    [field: SerializeField]
+    public GameFlowManager Flow { get; set; } = null;
+
     [Header("Movement")]
     [SerializeField]
     private Vector3 _direction = Vector3.zero;
@@ -21,54 +28,80 @@ public class CameraController : MonoBehaviour, IReflectable
     [SerializeField]
     private float _speed = 0.0f;
 
+
+
+    private NativeArray<Vector3> _flowDirectionCondition;
+    private NativeArray<float3> _flowDirection;
+
+    private NativeArray<float3> _flowPosition;
+
+    public Vector3 Direction
+    {
+        get => _direction; 
+        set
+        {
+            _direction = value;
+
+            Flow.CompleteAll(); 
+
+            _flowDirectionCondition[0] = _direction;
+            _flowDirection[0] = _direction;
+            Flow.TryStartConditionalUpdate
+            (
+                new MovementCondition
+                {
+                    Direction = _flowDirectionCondition
+                },
+                new MoveCameraStep
+                {
+                    Position = _flowPosition,
+                    Direction = _flowDirection,
+                    Speed = _speed,
+                    DeltaTime = Time.deltaTime,
+                },
+                "CameraMovement",
+                applyHandler: () => {
+                    Flow.CompleteAll();
+                    transform.position = _flowPosition[0];
+                }
+            );
+        }
+    }
+
+
+
     private void HandleMovement(CallbackContext context)
-        => _direction = context.ReadValue<Vector3>();
+        => Direction = context.ReadValue<Vector3>();
 
     private void Awake()
     {
         if (_cam == null) _cam = GetComponent<Camera>();
 
-
-        //transform.position = new(0f, 10f, 0f);
-        //transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        _flowDirectionCondition = new NativeArray<Vector3>(1, Allocator.Persistent);
+        _flowPosition = new NativeArray<float3>(1, Allocator.Persistent);
+        _flowDirection = new NativeArray<float3>(1, Allocator.Persistent);
     }
 
     private void OnEnable()
     {
-        if(Input != null)
-        {
-            Input.MovementAction += HandleMovement;
-        }
+        if(Input != null) Input.MovementAction += HandleMovement;
     }
 
     private void OnDisable()
     {
-
-        if (Input != null)
-        {
-            Input.MovementAction -= HandleMovement;
-        }
+        if (Input != null) Input.MovementAction -= HandleMovement;
     }
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if (Input != null)
-        {
-            Input.MovementAction += HandleMovement;
-        }
+        if (Input != null) Input.MovementAction += HandleMovement;
 
         if (_settings != null)
         {
             transform.position = _settings.Position;
             transform.rotation = Quaternion.Euler(_settings.Rotation);
-            _speed = _settings.Speed;
+            _speed = _settings.MoveSpeed;
         }
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        transform.position += _direction * _speed * Time.deltaTime;
     }
 }

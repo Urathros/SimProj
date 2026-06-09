@@ -10,5 +10,5 @@ public class CameraSettings : ScriptableObject
     public Vector3 Rotation { get; set; } = Vector3.zero;
 
     [field: SerializeField]
-    public float Speed { get; set; }
+    public float MoveSpeed { get; set; }
 }
