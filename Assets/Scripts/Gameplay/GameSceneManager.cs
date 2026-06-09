@@ -11,10 +11,17 @@ public class GameSceneManager : SceneInjector
     [field: SerializeField]
     public GameFlowManager Flow { get; set; } = null;
 
-    private void Update() => Flow.Tick();
+    protected void Awake()
+    {
+        base.Awake();
+        GameFlowPlayerLoopRunner.Initialize(Flow);
+    }
+    //private void Update() => Flow.Tick();
 
     protected void OnDestroy()
     {
+        GameFlowPlayerLoopRunner.Finalize();
+
         base.OnDestroy();
         Flow.Dispose();
     }
