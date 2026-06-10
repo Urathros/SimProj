@@ -27,6 +27,57 @@ public class InputController : MonoBehaviour, IReflectable
     }
 
 
+
+    public event Action<CallbackContext> MovementStartAction
+    {
+        add
+        {
+            if (_input == null) return;
+
+            _input.Topdown.Movement2.started += value;
+        }
+        remove
+        {
+            if (_input == null) return;
+
+            _input.Topdown.Movement2.started -= value;
+        }
+    }
+
+    public event Action<CallbackContext> MovementPerformAction
+    {
+        add
+        {
+            if (_input == null) return;
+
+            _input.Topdown.Movement2.performed += value;
+        }
+        remove
+        {
+            if (_input == null) return;
+
+            _input.Topdown.Movement2.performed -= value;
+        }
+    }
+
+    public event Action<CallbackContext> MovementCancelAction
+    {
+        add
+        {
+            if (_input == null) return;
+
+            _input.Topdown.Movement2.canceled += value;
+        }
+        remove
+        {
+            if (_input == null) return;
+
+            _input.Topdown.Movement2.canceled -= value;
+        }
+    }
+
+
+
     private void Awake()
     {
         if (_input == null) _input = new();

@@ -28,6 +28,9 @@ public class CameraController : MonoBehaviour, IReflectable
     [SerializeField]
     private float _speed = 0.0f;
 
+    [SerializeField]
+    private Vector2 _startPosition = Vector2.zero;
+
 
 
     private NativeArray<Vector3> _flowDirectionCondition;
@@ -73,29 +76,63 @@ public class CameraController : MonoBehaviour, IReflectable
     private void HandleMovement(CallbackContext context)
         => Direction = context.ReadValue<Vector3>();
 
+
+    private void HandleStartMovement(CallbackContext context)
+        => _startPosition = context.ReadValue<Vector2>();
+
+    private void HandlePerformMovement(CallbackContext context)
+    {
+        var dir = (_startPosition - context.ReadValue<Vector2>()).normalized * -1f;
+        Direction = new(dir.x, Direction.y, dir.y);
+    }
+
+    private void HandleCancelMovement(CallbackContext context)
+    {
+        _startPosition = Vector2.zero;
+        Direction = Vector3.zero;
+    }
+
+
+    private void AddInput()
+    {
+        if (Input != null)
+        {
+            Input.MovementAction += HandleMovement;
+            Input.MovementStartAction += HandleStartMovement;
+            Input.MovementPerformAction += HandlePerformMovement;
+            Input.MovementCancelAction += HandleCancelMovement;
+        }
+    }
+
+    private void RemoveInput()
+    {
+        if (Input != null)
+        {
+            //Input.Movement2Action -= HandleMovement2;
+            Input.MovementPerformAction -= HandlePerformMovement;
+            Input.MovementStartAction -= HandleStartMovement;
+            Input.MovementAction -= HandleMovement;
+        }
+    }
+
+
     private void Awake()
     {
         if (_cam == null) _cam = GetComponent<Camera>();
 
-        _flowDirectionCondition = new NativeArray<Vector3>(1, Allocator.Persistent);
-        _flowPosition = new NativeArray<float3>(1, Allocator.Persistent);
-        _flowDirection = new NativeArray<float3>(1, Allocator.Persistent);
+        _flowDirectionCondition = new (1, Allocator.Persistent);
+        _flowPosition = new (1, Allocator.Persistent);
+        _flowDirection = new (1, Allocator.Persistent);
     }
 
-    private void OnEnable()
-    {
-        if(Input != null) Input.MovementAction += HandleMovement;
-    }
+    private void OnEnable() => AddInput();
 
-    private void OnDisable()
-    {
-        if (Input != null) Input.MovementAction -= HandleMovement;
-    }
+    private void OnDisable() => RemoveInput();
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
-        if (Input != null) Input.MovementAction += HandleMovement;
+        AddInput();
 
         if (_settings != null)
         {

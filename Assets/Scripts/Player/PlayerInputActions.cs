@@ -118,6 +118,15 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""processors"": """",
                     ""interactions"": """",
                     ""initialStateCheck"": true
+                },
+                {
+                    ""name"": ""Movement2"",
+                    ""type"": ""Value"",
+                    ""id"": ""c9db1827-374b-435d-8678-fe9ca830c960"",
+                    ""expectedControlType"": ""Vector2"",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": true
                 }
             ],
             ""bindings"": [
@@ -296,6 +305,39 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
                     ""action"": ""Zoom"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""One Modifier"",
+                    ""id"": ""bc12f199-2eec-464b-a0c8-b6a5995535de"",
+                    ""path"": ""OneModifier"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement2"",
+                    ""isComposite"": true,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": ""modifier"",
+                    ""id"": ""0a738ed5-436e-4bd7-9c5e-302a0d0f1d15"",
+                    ""path"": ""<Mouse>/rightButton"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
+                },
+                {
+                    ""name"": ""binding"",
+                    ""id"": ""21de2621-fa98-4d7c-9c26-ef1a9db44188"",
+                    ""path"": ""<Mouse>/position"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": """",
+                    ""action"": ""Movement2"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": true
                 }
             ]
         }
@@ -307,6 +349,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         m_Topdown_Movement = m_Topdown.FindAction("Movement", throwIfNotFound: true);
         m_Topdown_Look = m_Topdown.FindAction("Look", throwIfNotFound: true);
         m_Topdown_Zoom = m_Topdown.FindAction("Zoom", throwIfNotFound: true);
+        m_Topdown_Movement2 = m_Topdown.FindAction("Movement2", throwIfNotFound: true);
     }
 
     ~@PlayerInputActions()
@@ -390,6 +433,7 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
     private readonly InputAction m_Topdown_Movement;
     private readonly InputAction m_Topdown_Look;
     private readonly InputAction m_Topdown_Zoom;
+    private readonly InputAction m_Topdown_Movement2;
     /// <summary>
     /// Provides access to input actions defined in input action map "Topdown".
     /// </summary>
@@ -413,6 +457,10 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// Provides access to the underlying input action "Topdown/Zoom".
         /// </summary>
         public InputAction @Zoom => m_Wrapper.m_Topdown_Zoom;
+        /// <summary>
+        /// Provides access to the underlying input action "Topdown/Movement2".
+        /// </summary>
+        public InputAction @Movement2 => m_Wrapper.m_Topdown_Movement2;
         /// <summary>
         /// Provides access to the underlying input action map instance.
         /// </summary>
@@ -448,6 +496,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Zoom.started += instance.OnZoom;
             @Zoom.performed += instance.OnZoom;
             @Zoom.canceled += instance.OnZoom;
+            @Movement2.started += instance.OnMovement2;
+            @Movement2.performed += instance.OnMovement2;
+            @Movement2.canceled += instance.OnMovement2;
         }
 
         /// <summary>
@@ -468,6 +519,9 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
             @Zoom.started -= instance.OnZoom;
             @Zoom.performed -= instance.OnZoom;
             @Zoom.canceled -= instance.OnZoom;
+            @Movement2.started -= instance.OnMovement2;
+            @Movement2.performed -= instance.OnMovement2;
+            @Movement2.canceled -= instance.OnMovement2;
         }
 
         /// <summary>
@@ -529,5 +583,12 @@ public partial class @PlayerInputActions: IInputActionCollection2, IDisposable
         /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
         /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
         void OnZoom(InputAction.CallbackContext context);
+        /// <summary>
+        /// Method invoked when associated input action "Movement2" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+        /// </summary>
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+        /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+        void OnMovement2(InputAction.CallbackContext context);
     }
 }
