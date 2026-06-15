@@ -4,13 +4,22 @@ using System.Runtime.CompilerServices;
 using Unity.Collections;
 
 [Serializable]
-public sealed class GameFlowManager : IDisposable, IReflectable
+public sealed class GameFlowManager : IDisposable, IReflectable, IDebugUI
 {
     private readonly Dictionary<string, IFlow> _activeFlows = new();
 
     private bool _isDisposed;
 
+    public event Action DebugStateChangedDel = () => { };
+
     public bool IsRunning(string flowID) => _activeFlows.ContainsKey(flowID);
+
+    private void NotifyDebugStateChanged()
+    {
+#if UNITY_EDITOR
+        DebugStateChangedDel?.Invoke();
+#endif
+    }
 
     private void ThrowIfDisposed()
     {
@@ -39,6 +48,7 @@ public sealed class GameFlowManager : IDisposable, IReflectable
         flow.ScheduleNext();
 
         _activeFlows.Add(flowID, flow);
+        NotifyDebugStateChanged();
 
         return true;
     }
@@ -48,6 +58,7 @@ public sealed class GameFlowManager : IDisposable, IReflectable
         if (!_activeFlows.Remove(flowID, out var flow)) return;
 
         flow.Dispose();
+        NotifyDebugStateChanged();
     }
 
     public void Tick()
@@ -85,6 +96,7 @@ public sealed class GameFlowManager : IDisposable, IReflectable
 
         _activeFlows.Clear();
         _isDisposed = true;
+        NotifyDebugStateChanged();
     }
 
     public void CompleteAll()
@@ -95,5 +107,25 @@ public sealed class GameFlowManager : IDisposable, IReflectable
         {
             flow.Complete();
         }
+    }
+
+    public GameFlowManagerDebugSnapshot CreateDebugSnapshot()
+    {
+        var flows = new List<GameFlowDebugInfo>();
+
+        foreach (var pair in _activeFlows)
+        {
+            flows.Add(new GameFlowDebugInfo(
+                pair.Key,
+                pair.Value.GetType().Name,
+                pair.Value != null
+            ));
+        }
+
+        return new GameFlowManagerDebugSnapshot(
+            _isDisposed,
+            _activeFlows.Count,
+            flows
+        );
     }
 }

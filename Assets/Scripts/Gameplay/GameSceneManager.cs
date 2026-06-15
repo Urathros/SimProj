@@ -15,6 +15,7 @@ public class GameSceneManager : SceneInjector
     {
         base.Awake();
         GameFlowPlayerLoopRunner.Initialize(Flow);
+        GameFlowManagerDebugHooks.Register(Flow);
     }
     //private void Update() => Flow.Tick();
 
