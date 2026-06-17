@@ -93,7 +93,7 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
         _snapshot = _target.CreateDebugSnapshot();
 
-
+        if (_statusLabel == null) return;
         _statusLabel.text = _snapshot.IsDisposed ? "Status: Disposed" : "Status: Alive";
 
         _countLabel.text = $"Active Flows: {_snapshot.ActiveFlowCount}";

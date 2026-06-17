@@ -45,7 +45,7 @@ public class CameraController : MonoBehaviour, IReflectable
         {
             _direction = value;
 
-            Flow.CompleteAll(); 
+            Flow.CompleteAll();
 
             _flowDirectionCondition[0] = _direction;
             _flowDirection[0] = _direction;

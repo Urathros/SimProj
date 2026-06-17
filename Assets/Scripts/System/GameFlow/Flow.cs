@@ -3,6 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
 
+//TODO: Serialisieren -> Event Sourcing
 public sealed class Flow<TCondition, TStep> : IFlow
         where TCondition : struct, IGameFlowCondition
         where TStep : struct, IGameFlowStep
