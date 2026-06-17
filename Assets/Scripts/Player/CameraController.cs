@@ -45,7 +45,7 @@ public class CameraController : MonoBehaviour, IReflectable
         {
             _direction = value;
 
-            Flow.CompleteAll();
+            Flow.Complete("CameraMovement");
 
             _flowDirectionCondition[0] = _direction;
             _flowDirection[0] = _direction;
@@ -64,7 +64,7 @@ public class CameraController : MonoBehaviour, IReflectable
                 },
                 "CameraMovement",
                 applyHandler: () => {
-                    Flow.CompleteAll();
+                    Flow.Complete("CameraMovement");
                     transform.position = _flowPosition[0];
                 }
             );
@@ -109,6 +109,7 @@ public class CameraController : MonoBehaviour, IReflectable
         if (Input != null)
         {
             //Input.Movement2Action -= HandleMovement2;
+            Input.MovementCancelAction -= HandleCancelMovement;
             Input.MovementPerformAction -= HandlePerformMovement;
             Input.MovementStartAction -= HandleStartMovement;
             Input.MovementAction -= HandleMovement;

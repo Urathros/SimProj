@@ -53,11 +53,19 @@ public sealed class GameFlowManager : IDisposable, IReflectable, IDebugUI
         return true;
     }
 
+    public void Complete(string flowID)
+    {
+        if (!_activeFlows.TryGetValue(flowID, out var flow)) return;
+
+        flow.Complete();
+    }
+
     public void Stop(string flowID)
     {
         if (!_activeFlows.Remove(flowID, out var flow)) return;
 
         flow.Dispose();
+
         NotifyDebugStateChanged();
     }
 
