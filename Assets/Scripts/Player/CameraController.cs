@@ -78,18 +78,59 @@ public class CameraController : MonoBehaviour, IReflectable
 
 
     private void HandleStartMovement(CallbackContext context)
-        => _startPosition = context.ReadValue<Vector2>();
+    //=> _startPosition = context.ReadValue<Vector2>();
+    {
+        Debug.Log("Start");
+        _startPosition = context.ReadValue<Vector2>();
+        //Flow.Complete("CameraMovement");
+
+        _flowDirectionCondition[0] = _direction;
+        _flowDirection[0] = _direction;
+        Flow.TryStartConditionalUpdate
+        (
+            new MovementCondition
+            {
+                Direction = _flowDirectionCondition
+            },
+            new MoveCameraStep
+            {
+                Position = _flowPosition,
+                Direction = _flowDirection,
+                Speed = _speed,
+                DeltaTime = Time.deltaTime,
+            },
+            "CameraMovement",
+            applyHandler: () => {
+                Flow.Complete("CameraMovement");
+                transform.position = _flowPosition[0];
+            }
+        );
+    }
 
     private void HandlePerformMovement(CallbackContext context)
     {
         var dir = (_startPosition - context.ReadValue<Vector2>()).normalized * -1f;
-        Direction = new(dir.x, Direction.y, dir.y);
+        _direction = new(dir.x, Direction.y, dir.y);
+        Debug.Log("Perform");
+
+
+        _flowDirectionCondition[0] = _direction;
+        _flowDirection[0] = _direction;
+
+
     }
 
     private void HandleCancelMovement(CallbackContext context)
     {
+        Flow.Complete("CameraMovement");
+
         _startPosition = Vector2.zero;
-        Direction = Vector3.zero;
+        _direction = Vector3.zero;
+
+        _flowDirectionCondition[0] = _direction;
+        _flowDirection[0] = _direction;
+        Debug.Log("Cancel");
+
     }
 
 
