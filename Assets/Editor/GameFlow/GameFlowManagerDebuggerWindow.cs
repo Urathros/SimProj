@@ -123,39 +123,6 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
     private void CreateGUI()
     {
-        //rootVisualElement.style.paddingLeft = 12;
-        //rootVisualElement.style.paddingRight = 12;
-        //rootVisualElement.style.paddingTop = 12;
-
-        //var title = new Label("Game Flow Manager");
-        //title.style.unityFontStyleAndWeight = FontStyle.Bold;
-        //title.style.fontSize = 18;
-        //rootVisualElement.Add(title);
-
-        //_statusLabel = new();
-        //_countLabel = new();
-
-        //rootVisualElement.Add(_statusLabel);
-        //rootVisualElement.Add(_countLabel);
-
-        //_flowListView = new ListView 
-        //{
-        //    fixedItemHeight = 24,
-        //    makeItem = HandleFlowRowMake,
-        //    bindItem = HandleFlowRowBind,
-        //    selectionType = SelectionType.Single
-        //};
-
-        //_flowListView.style.flexGrow = 1;
-        //_flowListView.style.marginTop = 10;
-
-        //rootVisualElement.Add(_flowListView);
-
-        //var refreshButton = new Button(Refresh)
-        //{
-        //    text = "Refresh"
-        //};
-        //rootVisualElement.Add(refreshButton);
         _uxml.CloneTree(rootVisualElement);
         rootVisualElement.styleSheets.Add(_uss);
 
