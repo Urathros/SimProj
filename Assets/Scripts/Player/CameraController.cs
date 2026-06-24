@@ -40,7 +40,7 @@ public class CameraController : MonoBehaviour, IReflectable
 
     public Vector3 Direction
     {
-        get => _direction; 
+        get => _direction;
         set
         {
             _direction = value;
@@ -114,6 +114,7 @@ public class CameraController : MonoBehaviour, IReflectable
         Debug.Log("Perform");
 
 
+        Flow.Complete("CameraMovement");
         _flowDirectionCondition[0] = _direction;
         _flowDirection[0] = _direction;
 
@@ -123,6 +124,7 @@ public class CameraController : MonoBehaviour, IReflectable
     private void HandleCancelMovement(CallbackContext context)
     {
         Flow.Complete("CameraMovement");
+        Flow.Stop("CameraMovement");
 
         _startPosition = Vector2.zero;
         _direction = Vector3.zero;
@@ -162,9 +164,9 @@ public class CameraController : MonoBehaviour, IReflectable
     {
         if (_cam == null) _cam = GetComponent<Camera>();
 
-        _flowDirectionCondition = new (1, Allocator.Persistent);
-        _flowPosition = new (1, Allocator.Persistent);
-        _flowDirection = new (1, Allocator.Persistent);
+        _flowDirectionCondition = new(1, Allocator.Persistent);
+        _flowPosition = new(1, Allocator.Persistent);
+        _flowDirection = new(1, Allocator.Persistent);
     }
 
     private void OnEnable() => AddInput();
