@@ -7,37 +7,130 @@ using static UnityEngine.InputSystem.InputAction;
 [RequireComponent(typeof(Camera))]
 public class CameraController : MonoBehaviour, IReflectable
 {
-    [SerializeField]
+    /*************************************************************************/
+    #region Constants
+    /*************************************************************************/
+    /// <summary>
+    /// Unique identifier used by the GameFlowManager to track
+    /// camera movement update operations.
+    /// </summary>
+    private const string MovementUpdateToken = "CameraMovement";
+
+    /// <summary>
+    /// Index of the first element within the native arrays.
+    /// Since all arrays are allocated with a length of one,
+    /// this constant is used to improve readability.
+    /// </summary>
+    private const byte NativeArrFirstIdx = 0;
+
+    #endregion
+    /*************************************************************************/
+
+
+
+    /*************************************************************************/
+    #region Fields
+    /*************************************************************************/
+    /// <summary>
+    /// Reference to the camera component controlled by this controller.
+    /// </summary>
+    [ SerializeField, 
+      Tooltip("Reference to the camera component controlled by this controller.") ]
     private Camera _cam = null;
 
-    [SerializeField]
+    /// <summary>
+    /// Configuration asset containing initial camera settings
+    /// such as position, rotation and movement speed.
+    /// </summary>
+    [ SerializeField,
+      Tooltip("Configuration asset containing the camera's initial position, rotation and movement speed.")]
     private CameraSettings _settings = null;
 
-    [Inject]
-    [field: SerializeField]
+
+    /*-----------------------------------------------------------------------*/
+    #region System
+    /*-----------------------------------------------------------------------*/
+
+    /// <summary>
+    /// Provides access to all camera-related input actions.
+    /// </summary>
+    [Inject ]
+    [ field: Header("System") ]
+    [ field: SerializeField,
+             Tooltip("Provides access to all camera-related input actions.") ]
     public InputController Input { get; set; } = null;
 
+    /// <summary>
+    /// Handles conditional update execution and movement flow processing.
+    /// </summary>
     [Inject]
-    [field: SerializeField]
     public GameFlowManager Flow { get; set; } = null;
 
+    #endregion
+    /*-----------------------------------------------------------------------*/
+
+
+    /*-----------------------------------------------------------------------*/
+    #region Movement
+    /*-----------------------------------------------------------------------*/
+
+    /// <summary>
+    /// Current movement direction of the camera.
+    /// </summary>
     [Header("Movement")]
-    [SerializeField]
+    [ SerializeField,
+      Tooltip("Current movement direction of the camera.")]
     private Vector3 _direction = Vector3.zero;
 
-    [SerializeField]
+    /// <summary>
+    /// Current movement speed applied to the camera.
+    /// </summary>
+    [ SerializeField,
+      Tooltip("Movement speed applied when the camera is moving.") ]
     private float _speed = 0.0f;
 
-    [SerializeField]
+    /// <summary>
+    /// Screen position where a mouse drag movement started.
+    /// </summary>
+    [ SerializeField,
+      Tooltip("Screen position where the current mouse drag started.") ]
     private Vector2 _startPosition = Vector2.zero;
+    #endregion
+    /*-----------------------------------------------------------------------*/
 
 
-
+    /*-----------------------------------------------------------------------*/
+    #region Native
+    /*-----------------------------------------------------------------------*/
+    /// <summary>
+    /// Native array used by movement conditions to determine
+    /// whether movement updates should continue running.
+    /// </summary>
     private NativeArray<Vector3> _flowDirectionCondition;
+
+    /// <summary>
+    /// Native array containing the current movement direction
+    /// used by movement execution steps.
+    /// </summary>
     private NativeArray<float3> _flowDirection;
 
+    /// <summary>
+    /// Native array containing the camera position
+    /// used during movement calculations.
+    /// </summary>
     private NativeArray<float3> _flowPosition;
+    #endregion
+    /*-----------------------------------------------------------------------*/
 
+    #endregion
+    /*************************************************************************/
+
+
+    /// <summary>
+    /// Gets or sets the current movement direction.
+    /// Setting this value updates the native movement data
+    /// and starts a movement update if required.
+    /// </summary>
     public Vector3 Direction
     {
         get => _direction;
@@ -45,121 +138,143 @@ public class CameraController : MonoBehaviour, IReflectable
         {
             _direction = value;
 
-            Flow.Complete("CameraMovement");
+            Flow.Complete(MovementUpdateToken);
 
-            _flowDirectionCondition[0] = _direction;
-            _flowDirection[0] = _direction;
-            Flow.TryStartConditionalUpdate
-            (
-                new MovementCondition
-                {
-                    Direction = _flowDirectionCondition
-                },
-                new MoveCameraStep
-                {
-                    Position = _flowPosition,
-                    Direction = _flowDirection,
-                    Speed = _speed,
-                    DeltaTime = Time.deltaTime,
-                },
-                "CameraMovement",
-                applyHandler: () => {
-                    Flow.Complete("CameraMovement");
-                    transform.position = _flowPosition[0];
-                }
-            );
+            UpdateNativeFlowDirection();
+
+            StartConditionalMovementUpdate();
         }
     }
 
 
 
-    private void HandleMovement(CallbackContext context)
+    /*************************************************************************/
+    #region Callbacks
+    /*************************************************************************/
+    /// <summary>
+    /// Handles keyboard movement input and updates
+    /// the camera movement direction.
+    /// </summary>
+    /// <param name="context">Input callback context.</param>
+    private void HandleKeyboardMovement(CallbackContext context)
         => Direction = context.ReadValue<Vector3>();
 
-
-    private void HandleStartMovement(CallbackContext context)
-    //=> _startPosition = context.ReadValue<Vector2>();
+    /// <summary>
+    /// Handles the beginning of a mouse drag movement operation.
+    /// Stores the initial mouse position and starts movement processing.
+    /// </summary>
+    /// <param name="context">Input callback context.</param>
+    private void HandleStartMouseMovement(CallbackContext context)
     {
-        Debug.Log("Start");
         _startPosition = context.ReadValue<Vector2>();
-        //Flow.Complete("CameraMovement");
 
-        _flowDirectionCondition[0] = _direction;
-        _flowDirection[0] = _direction;
-        Flow.TryStartConditionalUpdate
-        (
-            new MovementCondition
-            {
-                Direction = _flowDirectionCondition
-            },
-            new MoveCameraStep
-            {
-                Position = _flowPosition,
-                Direction = _flowDirection,
-                Speed = _speed,
-                DeltaTime = Time.deltaTime,
-            },
-            "CameraMovement",
-            applyHandler: () => {
-                Flow.Complete("CameraMovement");
-                transform.position = _flowPosition[0];
-            }
-        );
+        UpdateNativeFlowDirection();
+        StartConditionalMovementUpdate();
     }
 
-    private void HandlePerformMovement(CallbackContext context)
+    /// <summary>
+    /// Handles mouse drag updates and converts the drag delta
+    /// into a camera movement direction.
+    /// </summary>
+    /// <param name="context">Input callback context.</param>
+    private void HandlePerformMouseMovement(CallbackContext context)
     {
         var dir = (_startPosition - context.ReadValue<Vector2>()).normalized * -1f;
         _direction = new(dir.x, Direction.y, dir.y);
-        Debug.Log("Perform");
 
-
-        Flow.Complete("CameraMovement");
-        _flowDirectionCondition[0] = _direction;
-        _flowDirection[0] = _direction;
-
-
+        Flow.Complete(MovementUpdateToken);
+        UpdateNativeFlowDirection();
     }
 
-    private void HandleCancelMovement(CallbackContext context)
+    /// <summary>
+    /// Handles the cancellation of a mouse drag movement.
+    /// Stops active movement updates and resets movement state.
+    /// </summary>
+    /// <param name="context">Input callback context.</param>
+    private void HandleCancelMouseMovement(CallbackContext context)
     {
-        Flow.Complete("CameraMovement");
-        Flow.Stop("CameraMovement");
+        Flow.Complete(MovementUpdateToken);
+        Flow.Stop(MovementUpdateToken);
 
         _startPosition = Vector2.zero;
         _direction = Vector3.zero;
 
-        _flowDirectionCondition[0] = _direction;
-        _flowDirection[0] = _direction;
-        Debug.Log("Cancel");
-
+        UpdateNativeFlowDirection();
     }
 
+    #endregion
+    /*************************************************************************/
 
+
+    /// <summary>
+    /// Starts a conditional movement update process if one
+    /// is not already running.
+    /// </summary>
+    private void StartConditionalMovementUpdate()
+    {
+        Flow.TryStartConditionalUpdate
+                (
+                    new MovementCondition
+                    {
+                        Direction = _flowDirectionCondition
+                    },
+                    new MoveCameraStep
+                    {
+                        Position = _flowPosition,
+                        Direction = _flowDirection,
+                        Speed = _speed,
+                        DeltaTime = Time.deltaTime,
+                    },
+                    MovementUpdateToken,
+                    applyHandler: () =>
+                    {
+                        Flow.Complete(MovementUpdateToken);
+                        transform.position = _flowPosition[NativeArrFirstIdx];
+                    }
+                );
+    }
+
+    /// <summary>
+    /// Synchronizes the current movement direction with the
+    /// native arrays used by the movement system.
+    /// </summary>
+    private void UpdateNativeFlowDirection()
+    {
+        _flowDirectionCondition[NativeArrFirstIdx] = _direction;
+        _flowDirection[NativeArrFirstIdx] = _direction;
+    }
+
+    /// <summary>
+    /// Registers all required input callbacks.
+    /// </summary>
     private void AddInput()
     {
         if (Input != null)
         {
-            Input.MovementAction += HandleMovement;
-            Input.MovementStartAction += HandleStartMovement;
-            Input.MovementPerformAction += HandlePerformMovement;
-            Input.MovementCancelAction += HandleCancelMovement;
+            Input.MovementAction += HandleKeyboardMovement;
+            Input.MovementStartAction += HandleStartMouseMovement;
+            Input.MovementPerformAction += HandlePerformMouseMovement;
+            Input.MovementCancelAction += HandleCancelMouseMovement;
         }
     }
 
+    /// <summary>
+    /// Unregisters all previously registered input callbacks.
+    /// </summary>
     private void RemoveInput()
     {
         if (Input != null)
         {
-            //Input.Movement2Action -= HandleMovement2;
-            Input.MovementCancelAction -= HandleCancelMovement;
-            Input.MovementPerformAction -= HandlePerformMovement;
-            Input.MovementStartAction -= HandleStartMovement;
-            Input.MovementAction -= HandleMovement;
+            Input.MovementCancelAction -= HandleCancelMouseMovement;
+            Input.MovementPerformAction -= HandlePerformMouseMovement;
+            Input.MovementStartAction -= HandleStartMouseMovement;
+            Input.MovementAction -= HandleKeyboardMovement;
         }
     }
 
-
+    /*************************************************************************/
+    #region ExecutionOroder
+    /*************************************************************************/
     private void Awake()
     {
         if (_cam == null) _cam = GetComponent<Camera>();
@@ -173,7 +288,6 @@ public class CameraController : MonoBehaviour, IReflectable
 
     private void OnDisable() => RemoveInput();
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         AddInput();
@@ -185,4 +299,6 @@ public class CameraController : MonoBehaviour, IReflectable
             _speed = _settings.MoveSpeed;
         }
     }
+    #endregion
+    /*************************************************************************/
 }
