@@ -24,6 +24,12 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
     private ListView _flowListView = null;
 
     private GameFlowManagerDebugSnapshot _snapshot;
+
+    [SerializeField]
+    private VisualTreeAsset _uxml = null;
+
+    [SerializeField]
+    private StyleSheet _uss = null;
     #endregion
     /*************************************************************************/
 
@@ -32,28 +38,17 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
     /*************************************************************************/
     private VisualElement HandleFlowRowMake()
     {
-        var row = new VisualElement
-        {
-            style = { flexDirection = FlexDirection.Row }
-        };
+        var row = new VisualElement();
+        row.AddToClassList("flow-row");
 
-        var id = new Label
-        {
-            name = FlowIdLabelName
-        };
-        id.style.flexGrow = 1;
+        var id = new Label { name = FlowIdLabelName };
+        id.AddToClassList(FlowIdLabelName);
 
-        var type = new Label
-        {
-            name = FlowTypeLabelName
-        };
-        type.style.width = 180;
+        var type = new Label { name = FlowTypeLabelName };
+        type.AddToClassList(FlowTypeLabelName);
 
-        var valid = new Label
-        {
-            name = FlowValidLabelName
-        };
-        valid.style.width = 80;
+        var valid = new Label { name = FlowValidLabelName };
+        valid.AddToClassList(FlowValidLabelName);
 
         row.Add(id);
         row.Add(type);
@@ -128,39 +123,52 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
     private void CreateGUI()
     {
-        rootVisualElement.style.paddingLeft = 12;
-        rootVisualElement.style.paddingRight = 12;
-        rootVisualElement.style.paddingTop = 12;
+        //rootVisualElement.style.paddingLeft = 12;
+        //rootVisualElement.style.paddingRight = 12;
+        //rootVisualElement.style.paddingTop = 12;
 
-        var title = new Label("Game Flow Manager");
-        title.style.unityFontStyleAndWeight = FontStyle.Bold;
-        title.style.fontSize = 18;
-        rootVisualElement.Add(title);
+        //var title = new Label("Game Flow Manager");
+        //title.style.unityFontStyleAndWeight = FontStyle.Bold;
+        //title.style.fontSize = 18;
+        //rootVisualElement.Add(title);
 
-        _statusLabel = new();
-        _countLabel = new();
+        //_statusLabel = new();
+        //_countLabel = new();
 
-        rootVisualElement.Add(_statusLabel);
-        rootVisualElement.Add(_countLabel);
+        //rootVisualElement.Add(_statusLabel);
+        //rootVisualElement.Add(_countLabel);
 
-        _flowListView = new ListView 
-        {
-            fixedItemHeight = 24,
-            makeItem = HandleFlowRowMake,
-            bindItem = HandleFlowRowBind,
-            selectionType = SelectionType.Single
-        };
+        //_flowListView = new ListView 
+        //{
+        //    fixedItemHeight = 24,
+        //    makeItem = HandleFlowRowMake,
+        //    bindItem = HandleFlowRowBind,
+        //    selectionType = SelectionType.Single
+        //};
 
-        _flowListView.style.flexGrow = 1;
-        _flowListView.style.marginTop = 10;
+        //_flowListView.style.flexGrow = 1;
+        //_flowListView.style.marginTop = 10;
 
-        rootVisualElement.Add(_flowListView);
+        //rootVisualElement.Add(_flowListView);
 
-        var refreshButton = new Button(Refresh)
-        {
-            text = "Refresh"
-        };
-        rootVisualElement.Add(refreshButton);
+        //var refreshButton = new Button(Refresh)
+        //{
+        //    text = "Refresh"
+        //};
+        //rootVisualElement.Add(refreshButton);
+        _uxml.CloneTree(rootVisualElement);
+        rootVisualElement.styleSheets.Add(_uss);
+
+        _statusLabel = rootVisualElement.Q<Label>("status-label");
+        _countLabel = rootVisualElement.Q<Label>("count-label");
+        _flowListView = rootVisualElement.Q<ListView>("flow-list");
+
+        _flowListView.fixedItemHeight = 24;
+        _flowListView.makeItem = HandleFlowRowMake;
+        _flowListView.bindItem = HandleFlowRowBind;
+        _flowListView.selectionType = SelectionType.Single;
+
+        rootVisualElement.Q<Button>("refresh-button").clicked += Refresh;
 
         Refresh();
 

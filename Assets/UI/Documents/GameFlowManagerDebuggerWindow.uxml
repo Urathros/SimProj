@@ -1,0 +1,9 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="root" style="flex-grow: 1;">
+        <ui:Label text="Game Flow Manager" name="title"/>
+        <ui:Label text="" name="status-label"/>
+        <ui:Label text="" name="count-label"/>
+        <ui:ListView name="flow-list"/>
+        <ui:Button text="Refresh" name="refresh-button"/>
+    </ui:VisualElement>
+</ui:UXML>
