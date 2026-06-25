@@ -9,6 +9,9 @@ using UnityEngine.UIElements;
 #if UNITY_EDITOR
 public class GameFlowManagerDebuggerWindow : EditorWindow
 {
+    private const string UxmlGUID = "2c2616c995aa0cd4b8716f7f415ccb60";
+    private const string UssGUID = "92b3f9ad75b985c4697cd6b50fd00d1d";
+
     private const string FlowIdLabelName = "flow-id";
     private const string FlowTypeLabelName = "flow-type";
     private const string FlowValidLabelName = "flow-valid";
@@ -75,6 +78,22 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
     #endregion
     /*************************************************************************/
 
+    private void LoadAssets()
+    {
+        var path = string.Empty;
+        if (_uxml == null)
+        {
+            path = AssetDatabase.GUIDToAssetPath(UxmlGUID);
+            _uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
+        }
+
+        if(_uss == null)
+        {
+            path = AssetDatabase.GUIDToAssetPath(UssGUID);
+            _uss = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
+        }
+    }
+
     private void Refresh()
     {
         if (_target == null)
@@ -123,6 +142,8 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
     private void CreateGUI()
     {
+        LoadAssets();
+
         _uxml.CloneTree(rootVisualElement);
         rootVisualElement.styleSheets.Add(_uss);
 
