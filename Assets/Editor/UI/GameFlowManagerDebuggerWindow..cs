@@ -1,17 +1,12 @@
-using Codice.Client.Common.GameUI;
-using System;
+﻿using System;
 using System.Linq;
 using UnityEditor;
-using UnityEditor.TerrainTools;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-#if UNITY_EDITOR
-public class GameFlowManagerDebuggerWindow : EditorWindow
+public partial class GameFlowManagerDebuggerWindow : EditorWindow
 {
-    private const string UxmlGUID = "2c2616c995aa0cd4b8716f7f415ccb60";
-    private const string UssGUID = "92b3f9ad75b985c4697cd6b50fd00d1d";
-
+    private const string FlowRowLabelName = "flow-row";
     private const string FlowIdLabelName = "flow-id";
     private const string FlowTypeLabelName = "flow-type";
     private const string FlowValidLabelName = "flow-valid";
@@ -22,17 +17,8 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
     private static IDebugUI _target = null;
 
-    private Label _statusLabel = null;
-    private Label _countLabel = null;
-    private ListView _flowListView = null;
-
     private GameFlowManagerDebugSnapshot _snapshot;
 
-    [SerializeField]
-    private VisualTreeAsset _uxml = null;
-
-    [SerializeField]
-    private StyleSheet _uss = null;
     #endregion
     /*************************************************************************/
 
@@ -42,7 +28,7 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
     private VisualElement HandleFlowRowMake()
     {
         var row = new VisualElement();
-        row.AddToClassList("flow-row");
+        row.AddToClassList(FlowRowLabelName);
 
         var id = new Label { name = FlowIdLabelName };
         id.AddToClassList(FlowIdLabelName);
@@ -71,28 +57,12 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
 
 
-    private static void HandleDebugStateChanged() 
+    private static void HandleDebugStateChanged()
         => GetWindow<GameFlowManagerDebuggerWindow>().Refresh();
 
 
     #endregion
     /*************************************************************************/
-
-    private void LoadAssets()
-    {
-        var path = string.Empty;
-        if (_uxml == null)
-        {
-            path = AssetDatabase.GUIDToAssetPath(UxmlGUID);
-            _uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
-        }
-
-        if(_uss == null)
-        {
-            path = AssetDatabase.GUIDToAssetPath(UssGUID);
-            _uss = AssetDatabase.LoadAssetAtPath<StyleSheet>(path);
-        }
-    }
 
     private void Refresh()
     {
@@ -100,8 +70,8 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
         {
             _statusLabel.text = "Status: No GameFlowManager registered.";
             _countLabel.text = "Active Flows: 0";
-            _flowListView.itemsSource = Array.Empty<GameFlowDebugInfo>();
-            _flowListView.Rebuild();
+            _flowList.itemsSource = Array.Empty<GameFlowDebugInfo>();
+            _flowList.Rebuild();
             return;
         }
 
@@ -112,16 +82,8 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
 
         _countLabel.text = $"Active Flows: {_snapshot.ActiveFlowCount}";
 
-        _flowListView.itemsSource = _snapshot.ActiveFlows.ToList();
-        _flowListView.Rebuild();
-    }
-
-    [MenuItem("Tools/Game Flow Debugger")]
-    public static void OpenWindow()
-    {
-        var wnd = GetWindow<GameFlowManagerDebuggerWindow>();
-        wnd.titleContent = new("Game Flow Debugger");
-        wnd.Show();
+        _flowList.itemsSource = _snapshot.ActiveFlows.ToList();
+        _flowList.Rebuild();
     }
 
     public static void SetTarget(IDebugUI target)
@@ -141,20 +103,13 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
     }
 
     private void CreateGUI()
-    {
-        LoadAssets();
+	{
+		InitializeComponents();
 
-        _uxml.CloneTree(rootVisualElement);
-        rootVisualElement.styleSheets.Add(_uss);
-
-        _statusLabel = rootVisualElement.Q<Label>("status-label");
-        _countLabel = rootVisualElement.Q<Label>("count-label");
-        _flowListView = rootVisualElement.Q<ListView>("flow-list");
-
-        _flowListView.fixedItemHeight = 24;
-        _flowListView.makeItem = HandleFlowRowMake;
-        _flowListView.bindItem = HandleFlowRowBind;
-        _flowListView.selectionType = SelectionType.Single;
+        _flowList.fixedItemHeight = 24;
+        _flowList.makeItem = HandleFlowRowMake;
+        _flowList.bindItem = HandleFlowRowBind;
+        _flowList.selectionType = SelectionType.Single;
 
         rootVisualElement.Q<Button>("refresh-button").clicked += Refresh;
 
@@ -167,7 +122,4 @@ public class GameFlowManagerDebuggerWindow : EditorWindow
     {
         GameFlowManagerDebugHooks.UpdateDel -= Refresh;
     }
-    //private void OnInspectorUpdate() => Refresh();
 }
-
-#endif

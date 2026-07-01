@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using TMPro;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,18 +8,20 @@ using UnityEngine;
 public sealed class UICodeGenMonitor : AssetPostprocessor
 {
     private static UICodeGenCache _cache = null;
+    private static UICodeGenService _service = null;
 
     static UICodeGenMonitor()
     {
         Debug.Log("Initialized");
         _cache = new();
+        _service = new();
     }
 
     private static bool AnyUIAssetChanged(string[] paths)
     {
         foreach (var path in paths)
         {
-            if (!path.StartsWith( $"{_cache.FilePath}/", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!path.StartsWith( $"{_cache.EditorFilePath}/", StringComparison.OrdinalIgnoreCase)) continue;
 
             var ext = Path.GetExtension(path).ToLowerInvariant();
 
@@ -34,8 +37,10 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
             AnyUIAssetChanged(deletedAssets) ||
             AnyUIAssetChanged(movedAssets) ||
             AnyUIAssetChanged(movedFromAssetPaths))
-        {
+        { 
             _cache.Refresh();
+            foreach (var editorUxml in _cache.EditorUxmlFiles) 
+                _service.GenerateEditorFile(editorUxml);
         }
     }
 }
