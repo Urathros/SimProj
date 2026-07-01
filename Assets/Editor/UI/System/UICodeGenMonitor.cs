@@ -10,6 +10,7 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
     private static UICodeGenCache _cache = null;
     private static UICodeGenService _service = null;
 
+    public static bool IsGenerating { get; set; } = false;
     static UICodeGenMonitor()
     {
         Debug.Log("Initialized");
@@ -37,10 +38,18 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
             AnyUIAssetChanged(deletedAssets) ||
             AnyUIAssetChanged(movedAssets) ||
             AnyUIAssetChanged(movedFromAssetPaths))
-        { 
-            _cache.Refresh();
-            foreach (var editorUxml in _cache.EditorUxmlFiles) 
-                _service.GenerateEditorFile(editorUxml);
+        {
+            try
+            {
+                IsGenerating = true;
+
+                _cache.Refresh();
+                foreach (var editorUxml in _cache.EditorUxmlFiles)
+                    _service.GenerateEditorFile(editorUxml);
+                AssetDatabase.Refresh();
+            }
+            catch (Exception ex) { Debug.LogError(ex.Message); }
+            finally { IsGenerating = false; }
         }
     }
 }
