@@ -164,7 +164,7 @@ public class UICodeGenService
         builder.AppendLine("\t/*************************************************************************/");
     }
 
-    private void GenerateFields( StringBuilder builder, IEnumerable<VisualElement> visualElements)
+    private void GenerateEditorFields(StringBuilder builder, IEnumerable<VisualElement> visualElements)
     {
         builder.AppendLine("\t/*************************************************************************/")
                .AppendLine("\t#region Fields")
@@ -184,6 +184,33 @@ public class UICodeGenService
         builder.AppendLine()
                .AppendLine("\t[SerializeField]")
                .AppendLine("\tprivate VisualTreeAsset _uxml = null;");
+
+        builder.AppendLine("\t#endregion")
+               .AppendLine("\t/*************************************************************************/");
+    }
+
+    private void GenerateGameplayFields( StringBuilder builder, IEnumerable<VisualElement> visualElements)
+    {
+        builder.AppendLine("\t/*************************************************************************/")
+               .AppendLine("\t#region Fields")
+               .AppendLine("\t/*************************************************************************/");
+
+        foreach (var elem in visualElements)
+        {
+            if (string.IsNullOrWhiteSpace(elem.name)) continue;
+
+            builder.Append("\tprivate ")
+                   .Append(elem.GetType().Name)
+                   .Append(" _")
+                   .Append(SanitizeVariableName(elem.name))
+                   .AppendLine(" = null;");
+        }
+
+        builder.AppendLine()
+               .AppendLine("\t[SerializeField]")
+               .AppendLine("\tprivate VisualTreeAsset _uxml = null;")
+               .AppendLine()
+               .AppendLine("\tprivate VisualElement rootVisualElement = null;");
 
         builder.AppendLine("\t#endregion")
                .AppendLine("\t/*************************************************************************/");
@@ -259,6 +286,7 @@ public class UICodeGenService
                .AppendLine("\t{")
                .AppendLine("\t\tLoadAssets();")
                .AppendLine()
+                .AppendLine($"\t\trootVisualElement = GetComponent<UIDocument>().rootVisualElement;")
                .AppendLine("\t\t_uxml.CloneTree(GetComponent<UIDocument>().rootVisualElement);")
                .AppendLine();
 
@@ -334,7 +362,7 @@ public class UICodeGenService
         GenerateEditorGeneratedHeader(builder, uxml.name);
         GenerateConstants(builder, uxml, ussStyleSheets, visualElements);
         GenerateInClassSpace(builder);
-        GenerateFields(builder, visualElements);
+        GenerateEditorFields(builder, visualElements);
         GenerateInClassSpace(builder);
         GenerateLoadAssetsEditorFunction(builder);
         builder.AppendLine();
@@ -345,6 +373,7 @@ public class UICodeGenService
             GenerateRequireButtonFunction(builder);
             builder.AppendLine();
         }
+        builder.AppendLine();
         GenerateInitializeComponentsEditorFunction(builder, visualElements);
 
         builder.AppendLine("}");
@@ -377,9 +406,15 @@ public class UICodeGenService
         GenerateGameplayGeneratedHeader(builder, uxml.name);
         GenerateConstants(builder, uxml, ussStyleSheets, visualElements);
         GenerateInClassSpace(builder);
-        GenerateFields(builder, visualElements);
+        GenerateGameplayFields(builder, visualElements);
         GenerateInClassSpace(builder);
         GenerateLoadAssetsGameplayFunction(builder, uxml.name);
+        builder.AppendLine();
+        if (root.Query<Button>().First() != null)
+        {
+            GenerateRequireButtonFunction(builder);
+            builder.AppendLine();
+        }
         builder.AppendLine();
         GenerateInitializeComponentsGameplayFunction(builder, visualElements);
 

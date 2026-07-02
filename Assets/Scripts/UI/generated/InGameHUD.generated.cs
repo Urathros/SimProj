@@ -20,6 +20,15 @@ public partial class InGameHUD : MonoBehaviour
 	/*************************************************************************/
 	private const string UxmlGUID = "c4864061401b14542a23c7bc40e56f75";
 	private const string UxmlName = "In Game H U D";
+	private const string ElementName_TimeXQuadruple = "TimeXQuadruple";
+	private const string ElementName_TimeXDouble = "TimeXDouble";
+	private const string ElementName_TimeXHalf = "TimeXHalf";
+	private const string ElementName_StartPause = "StartPause";
+	private const string ElementName_Weather = "Weather";
+	private const string ElementName_Temprature = "Temprature";
+	private const string ElementName_DayPhase = "DayPhase";
+	private const string ElementName_Time = "Time";
+	private const string ElementName_Weekday = "Weekday";
 	#endregion
 	/*************************************************************************/
 
@@ -28,9 +37,20 @@ public partial class InGameHUD : MonoBehaviour
 	/*************************************************************************/
 	#region Fields
 	/*************************************************************************/
+	private Button _TimeXQuadruple = null;
+	private Button _TimeXDouble = null;
+	private Button _TimeXHalf = null;
+	private Button _StartPause = null;
+	private Label _Weather = null;
+	private Label _Temprature = null;
+	private Label _DayPhase = null;
+	private Label _Time = null;
+	private Label _Weekday = null;
 
 	[SerializeField]
 	private VisualTreeAsset _uxml = null;
+
+	private VisualElement rootVisualElement = null;
 	#endregion
 	/*************************************************************************/
 
@@ -45,11 +65,31 @@ public partial class InGameHUD : MonoBehaviour
 			throw new InvalidOperationException("Unable to load UXML.");
 	}
 
+	private Button RequireButton(string name)
+	{
+		var elem = rootVisualElement.Q<Button>(name);
+		if (elem == null)
+			throw new InvalidOperationException($"Required UI element '{name}' of type Button was not found.");
+
+		return elem;
+	}
+
+
 	protected void InitializeComponents()
 	{
 		LoadAssets();
 
+		rootVisualElement = GetComponent<UIDocument>().rootVisualElement;
 		_uxml.CloneTree(GetComponent<UIDocument>().rootVisualElement);
 
+		_TimeXQuadruple = RequireButton(ElementName_TimeXQuadruple);
+		_TimeXDouble = RequireButton(ElementName_TimeXDouble);
+		_TimeXHalf = RequireButton(ElementName_TimeXHalf);
+		_StartPause = RequireButton(ElementName_StartPause);
+		_Weather = rootVisualElement.Q<Label>(ElementName_Weather) as Label;
+		_Temprature = rootVisualElement.Q<Label>(ElementName_Temprature) as Label;
+		_DayPhase = rootVisualElement.Q<Label>(ElementName_DayPhase) as Label;
+		_Time = rootVisualElement.Q<Label>(ElementName_Time) as Label;
+		_Weekday = rootVisualElement.Q<Label>(ElementName_Weekday) as Label;
 }
 }

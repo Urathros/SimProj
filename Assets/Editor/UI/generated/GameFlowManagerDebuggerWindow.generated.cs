@@ -75,6 +75,7 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 		return elem;
 	}
 
+
 	protected void InitializeComponents()
 	{
 		LoadAssets();
