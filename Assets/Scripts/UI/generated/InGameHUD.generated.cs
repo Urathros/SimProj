@@ -50,7 +50,7 @@ public partial class InGameHUD : MonoBehaviour
 	[SerializeField]
 	private VisualTreeAsset _uxml = null;
 
-	private VisualElement rootVisualElement = null;
+	private VisualElement _rootVisualElement = null;
 	#endregion
 	/*************************************************************************/
 
@@ -67,7 +67,7 @@ public partial class InGameHUD : MonoBehaviour
 
 	private Button RequireButton(string name)
 	{
-		var elem = rootVisualElement.Q<Button>(name);
+		var elem = _rootVisualElement.Q<Button>(name);
 		if (elem == null)
 			throw new InvalidOperationException($"Required UI element '{name}' of type Button was not found.");
 
@@ -79,17 +79,17 @@ public partial class InGameHUD : MonoBehaviour
 	{
 		LoadAssets();
 
-		rootVisualElement = GetComponent<UIDocument>().rootVisualElement;
-		_uxml.CloneTree(GetComponent<UIDocument>().rootVisualElement);
+		_rootVisualElement = GetComponent<UIDocument>().rootVisualElement;
+		_uxml.CloneTree(_rootVisualElement);
 
 		_TimeXQuadruple = RequireButton(ElementName_TimeXQuadruple);
 		_TimeXDouble = RequireButton(ElementName_TimeXDouble);
 		_TimeXHalf = RequireButton(ElementName_TimeXHalf);
 		_StartPause = RequireButton(ElementName_StartPause);
-		_Weather = rootVisualElement.Q<Label>(ElementName_Weather) as Label;
-		_Temprature = rootVisualElement.Q<Label>(ElementName_Temprature) as Label;
-		_DayPhase = rootVisualElement.Q<Label>(ElementName_DayPhase) as Label;
-		_Time = rootVisualElement.Q<Label>(ElementName_Time) as Label;
-		_Weekday = rootVisualElement.Q<Label>(ElementName_Weekday) as Label;
+		_Weather = _rootVisualElement.Q<Label>(ElementName_Weather) as Label;
+		_Temprature = _rootVisualElement.Q<Label>(ElementName_Temprature) as Label;
+		_DayPhase = _rootVisualElement.Q<Label>(ElementName_DayPhase) as Label;
+		_Time = _rootVisualElement.Q<Label>(ElementName_Time) as Label;
+		_Weekday = _rootVisualElement.Q<Label>(ElementName_Weekday) as Label;
 }
 }

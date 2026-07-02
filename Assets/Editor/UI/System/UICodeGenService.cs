@@ -210,7 +210,7 @@ public class UICodeGenService
                .AppendLine("\t[SerializeField]")
                .AppendLine("\tprivate VisualTreeAsset _uxml = null;")
                .AppendLine()
-               .AppendLine("\tprivate VisualElement rootVisualElement = null;");
+               .AppendLine("\tprivate VisualElement _rootVisualElement = null;");
 
         builder.AppendLine("\t#endregion")
                .AppendLine("\t/*************************************************************************/");
@@ -243,11 +243,25 @@ public class UICodeGenService
 
     }
 
-    private void GenerateRequireButtonFunction(StringBuilder builder)
+    private void GenerateRequireButtonEditorFunction(StringBuilder builder)
     {
         builder.AppendLine("\tprivate Button RequireButton(string name)")
                .AppendLine("\t{")
                .AppendLine("\t\tvar elem = rootVisualElement.Q<Button>(name);")
+               .AppendLine("\t\tif (elem == null)")
+               .AppendLine("\t\t\tthrow new InvalidOperationException($\"Required UI element '{name}' of type Button was not found.\");")
+               .AppendLine()
+               .AppendLine("\t\treturn elem;")
+               .AppendLine("\t}");
+    }
+
+
+
+    private void GenerateRequireButtonGameplayFunction(StringBuilder builder)
+    {
+        builder.AppendLine("\tprivate Button RequireButton(string name)")
+               .AppendLine("\t{")
+               .AppendLine("\t\tvar elem = _rootVisualElement.Q<Button>(name);")
                .AppendLine("\t\tif (elem == null)")
                .AppendLine("\t\t\tthrow new InvalidOperationException($\"Required UI element '{name}' of type Button was not found.\");")
                .AppendLine()
@@ -286,8 +300,8 @@ public class UICodeGenService
                .AppendLine("\t{")
                .AppendLine("\t\tLoadAssets();")
                .AppendLine()
-                .AppendLine($"\t\trootVisualElement = GetComponent<UIDocument>().rootVisualElement;")
-               .AppendLine("\t\t_uxml.CloneTree(GetComponent<UIDocument>().rootVisualElement);")
+                .AppendLine($"\t\t_rootVisualElement = GetComponent<UIDocument>().rootVisualElement;")
+               .AppendLine("\t\t_uxml.CloneTree(_rootVisualElement);")
                .AppendLine();
 
         foreach (var elem in visualElements)
@@ -299,7 +313,7 @@ public class UICodeGenService
             {
                 builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = RequireButton(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
             }
-            else builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = rootVisualElement.Q<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)}) as {elem.GetType().Name};");
+            else builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = _rootVisualElement.Q<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)}) as {elem.GetType().Name};");
         }
 
 
@@ -370,7 +384,7 @@ public class UICodeGenService
         builder.AppendLine();
         if(root.Query<Button>().First() != null)
         {
-            GenerateRequireButtonFunction(builder);
+            GenerateRequireButtonEditorFunction(builder);
             builder.AppendLine();
         }
         builder.AppendLine();
@@ -412,7 +426,7 @@ public class UICodeGenService
         builder.AppendLine();
         if (root.Query<Button>().First() != null)
         {
-            GenerateRequireButtonFunction(builder);
+            GenerateRequireButtonGameplayFunction(builder);
             builder.AppendLine();
         }
         builder.AppendLine();
