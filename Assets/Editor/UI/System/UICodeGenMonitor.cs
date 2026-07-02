@@ -13,7 +13,7 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
     public static bool IsGenerating { get; set; } = false;
     static UICodeGenMonitor()
     {
-        Debug.Log("Initialized");
+        Debug.Log("Initialized"); 
         _cache = new();
         _service = new();
     }
@@ -22,7 +22,8 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
     {
         foreach (var path in paths)
         {
-            if (!path.StartsWith( $"{_cache.EditorFilePath}/", StringComparison.OrdinalIgnoreCase)) continue;
+            if (!path.StartsWith( $"{_cache.EditorFilePath}/", StringComparison.OrdinalIgnoreCase) 
+                && !path.StartsWith($"{_cache.GamePlayFilePath}/", StringComparison.OrdinalIgnoreCase)) continue;
 
             var ext = Path.GetExtension(path).ToLowerInvariant();
 
@@ -31,7 +32,7 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
 
         return false;
     }
-
+    
     private static void OnPostprocessAllAssets(string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
     {
         if (AnyUIAssetChanged(importedAssets) ||
@@ -46,6 +47,10 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
                 _cache.Refresh();
                 foreach (var editorUxml in _cache.EditorUxmlFiles)
                     _service.GenerateEditorFile(editorUxml);
+
+                foreach (var gameplayUxml in _cache.GamePlayUxmlFiles)
+                    _service.GenerateGameplayFile(gameplayUxml); 
+
                 AssetDatabase.Refresh();
             }
             catch (Exception ex) { Debug.LogError(ex.Message); }

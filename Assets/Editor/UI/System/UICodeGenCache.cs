@@ -8,8 +8,8 @@ using UnityEngine.WSA;
 
 public class UICodeGenCache
 {
-    private const string UiGamePlayFilePath = "Assets/UI/Gameplay";
-    private const string UiEditorFilePath = "Assets/UI/Editor";
+    private const string UiGamePlayFilePath = "Assets/Resources/UI";
+    private const string UiEditorFilePath = "Assets/Editor/UI";
 
     public List<VisualTreeAsset> EditorUxmlFiles { get; private set; } = null;
     public List<StyleSheet> EditorUssFiles { get; private set; } = null;
