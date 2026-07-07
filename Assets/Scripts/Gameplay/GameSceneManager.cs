@@ -11,6 +11,9 @@ public class GameSceneManager : SceneInjector
     [field: SerializeField]
     public GameFlowManager Flow { get; set; } = null;
 
+    [field: SerializeField]
+    public InGameHUD HUD { get; set; } = null;
+    
     protected void Awake()
     {
         base.Awake();

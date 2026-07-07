@@ -18,8 +18,6 @@ public partial class InGameHUD : MonoBehaviour
 	/*************************************************************************/
 	#region Constants
 	/*************************************************************************/
-	private const string UxmlGUID = "c4864061401b14542a23c7bc40e56f75";
-	private const string UxmlName = "In Game H U D";
 	private const string ElementName_TimeXQuadruple = "TimeXQuadruple";
 	private const string ElementName_TimeXDouble = "TimeXDouble";
 	private const string ElementName_TimeXHalf = "TimeXHalf";
@@ -48,9 +46,19 @@ public partial class InGameHUD : MonoBehaviour
 	private Label _Weekday = null;
 
 	[SerializeField]
+	private UIAssetConfig _config = null;
+
+	[SerializeField]
+private PanelSettings _panelSettings = null;
+
+	[SerializeField]
 	private VisualTreeAsset _uxml = null;
 
+	[SerializeField]
 	private VisualElement _rootVisualElement = null;
+
+	[SerializeField]
+	private UIDocument _uiDoc = null;
 	#endregion
 	/*************************************************************************/
 
@@ -58,8 +66,17 @@ public partial class InGameHUD : MonoBehaviour
 
 	private void LoadAssets()
 	{
-		if (_uxml == null)
-			_uxml = Resources.Load<VisualTreeAsset>("UI/InGameHUD");
+		if (_config == null)
+			_config = Resources.Load<UIAssetConfig>("Scriptables/InGameHUD");
+
+		if (_panelSettings == null && _config.HasPanelSettings)
+			_panelSettings = _config.PanelSettings;
+
+		if (_panelSettings == null)
+			throw new InvalidOperationException("Unable to load Panel Settings.");
+
+		if (_uxml == null && _config.HasUxml)
+			_uxml = _config.Uxml;
 
 		if (_uxml == null)
 			throw new InvalidOperationException("Unable to load UXML.");
@@ -79,7 +96,11 @@ public partial class InGameHUD : MonoBehaviour
 	{
 		LoadAssets();
 
-		_rootVisualElement = GetComponent<UIDocument>().rootVisualElement;
+		if(_uiDoc == null) _uiDoc = GetComponent<UIDocument>();
+
+		_rootVisualElement = _uiDoc.rootVisualElement;
+		_uiDoc.panelSettings = _panelSettings;
+		_uiDoc.visualTreeAsset = _uxml;
 		_uxml.CloneTree(_rootVisualElement);
 
 		_TimeXQuadruple = RequireButton(ElementName_TimeXQuadruple);

@@ -8,4 +8,5 @@
     <ui:Button text="x2" name="TimeXHalf"/>
     <ui:Button text="x2" name="TimeXDouble"/>
     <ui:Button text="x4" name="TimeXQuadruple"/>
+    <ui:Label text="Label"/>
 </ui:UXML>

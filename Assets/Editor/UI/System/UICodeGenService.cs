@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.UIElements;
+using static UnityEngine.Rendering.STP;
 
 public class UICodeGenService
 {
@@ -138,7 +139,7 @@ public class UICodeGenService
                .AppendLine("{");
     }
 
-    private void GenerateConstants(StringBuilder builder, VisualTreeAsset uxml, StyleSheet[] ussStyleSheets, IEnumerable<VisualElement> visualElements)
+    private void GenerateEditorConstants(StringBuilder builder, VisualTreeAsset uxml, StyleSheet[] ussStyleSheets, IEnumerable<VisualElement> visualElements)
     {
         var pattern = @"Window|Editor";
         var uxmlName = Regex.Replace(uxml.name, pattern, "", RegexOptions.IgnoreCase);
@@ -153,6 +154,22 @@ public class UICodeGenService
         //{
         //    builder.AppendLine($"    private const string {char.ToUpper(uss.name[0])}{uss.name.Substring(1)}UssGUID = \"{GetGuid(uss)}\";");
         //}
+
+        foreach (var elem in visualElements)
+        {
+            if (string.IsNullOrWhiteSpace(elem.name)) continue;
+            var sanitizedName = SanitizeVariableName(elem.name);
+            builder.AppendLine($"\tprivate const string ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)} = \"{elem.name}\";");
+        }
+        builder.AppendLine("\t#endregion");
+        builder.AppendLine("\t/*************************************************************************/");
+    }
+
+    private void GenerateGameplayConstants(StringBuilder builder, IEnumerable<VisualElement> visualElements)
+    {
+        builder.AppendLine("\t/*************************************************************************/")
+               .AppendLine("\t#region Constants")
+               .AppendLine("\t/*************************************************************************/");
 
         foreach (var elem in visualElements)
         {
@@ -208,9 +225,19 @@ public class UICodeGenService
 
         builder.AppendLine()
                .AppendLine("\t[SerializeField]")
+               .AppendLine("\tprivate UIAssetConfig _config = null;")
+               .AppendLine()
+               .AppendLine("\t[SerializeField]")
+               .AppendLine("private PanelSettings _panelSettings = null;")
+               .AppendLine()
+               .AppendLine("\t[SerializeField]")
                .AppendLine("\tprivate VisualTreeAsset _uxml = null;")
                .AppendLine()
-               .AppendLine("\tprivate VisualElement _rootVisualElement = null;");
+               .AppendLine("\t[SerializeField]")
+               .AppendLine("\tprivate VisualElement _rootVisualElement = null;")
+               .AppendLine()
+               .AppendLine("\t[SerializeField]")
+               .AppendLine("\tprivate UIDocument _uiDoc = null;");
 
         builder.AppendLine("\t#endregion")
                .AppendLine("\t/*************************************************************************/");
@@ -234,13 +261,21 @@ public class UICodeGenService
     {
         builder.AppendLine("\tprivate void LoadAssets()")
                .AppendLine("\t{")
-               .AppendLine("\t\tif (_uxml == null)")
-               .AppendLine($"\t\t\t_uxml = Resources.Load<VisualTreeAsset>(\"UI/{name}\");")
+               .AppendLine("\t\tif (_config == null)")
+               .AppendLine($"\t\t\t_config = Resources.Load<UIAssetConfig>(\"Scriptables/{name}\");")
+               .AppendLine()
+               .AppendLine("\t\tif (_panelSettings == null && _config.HasPanelSettings)")
+               .AppendLine("\t\t\t_panelSettings = _config.PanelSettings;")
+               .AppendLine()
+               .AppendLine("\t\tif (_panelSettings == null)")
+               .AppendLine("\t\t\tthrow new InvalidOperationException(\"Unable to load Panel Settings.\");")
+               .AppendLine()
+               .AppendLine("\t\tif (_uxml == null && _config.HasUxml)")
+               .AppendLine($"\t\t\t_uxml = _config.Uxml;")
                .AppendLine()
                .AppendLine("\t\tif (_uxml == null)")
                .AppendLine("\t\t\tthrow new InvalidOperationException(\"Unable to load UXML.\");")
                .AppendLine("\t}");
-
     }
 
     private void GenerateRequireButtonEditorFunction(StringBuilder builder)
@@ -300,7 +335,11 @@ public class UICodeGenService
                .AppendLine("\t{")
                .AppendLine("\t\tLoadAssets();")
                .AppendLine()
-                .AppendLine($"\t\t_rootVisualElement = GetComponent<UIDocument>().rootVisualElement;")
+               .AppendLine("\t\tif(_uiDoc == null) _uiDoc = GetComponent<UIDocument>();")
+               .AppendLine()
+               .AppendLine("\t\t_rootVisualElement = _uiDoc.rootVisualElement;")
+               .AppendLine("\t\t_uiDoc.panelSettings = _panelSettings;")
+               .AppendLine("\t\t_uiDoc.visualTreeAsset = _uxml;")
                .AppendLine("\t\t_uxml.CloneTree(_rootVisualElement);")
                .AppendLine();
 
@@ -310,9 +349,7 @@ public class UICodeGenService
 
             var sanitizedName = SanitizeVariableName(elem.name);
             if (elem is Button button)
-            {
                 builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = RequireButton(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
-            }
             else builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = _rootVisualElement.Q<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)}) as {elem.GetType().Name};");
         }
 
@@ -347,6 +384,24 @@ public class UICodeGenService
                .AppendLine("\t}");
     }
 
+    private static void EnsureFolderExists(string folderPath)
+    {
+        var folders = folderPath.Split('/');
+        var currentFolder = folders[0]; // Assets
+
+        for (var i = 1; i < folders.Length; i++)
+        {
+            var nextFolder = $"{currentFolder}/{folders[i]}";
+
+            if (!AssetDatabase.IsValidFolder(nextFolder))
+            {
+                AssetDatabase.CreateFolder(currentFolder, folders[i]);
+            }
+
+            currentFolder = nextFolder;
+        }
+    }
+
 
     private void WriteFile(StringBuilder builder, string fileName, string relativePath, string suffix)
     {
@@ -374,7 +429,7 @@ public class UICodeGenService
 
         var builder = new StringBuilder();
         GenerateEditorGeneratedHeader(builder, uxml.name);
-        GenerateConstants(builder, uxml, ussStyleSheets, visualElements);
+        GenerateEditorConstants(builder, uxml, ussStyleSheets, visualElements);
         GenerateInClassSpace(builder);
         GenerateEditorFields(builder, visualElements);
         GenerateInClassSpace(builder);
@@ -397,6 +452,32 @@ public class UICodeGenService
 
         builder.Clear();
 
+
+        if (!File.Exists($"{Application.dataPath}/Editor/Scriptables/{uxml.name}.asset"))
+        {
+
+            var scriptableFolderPath = $"Assets/Editor/Scriptables/";
+
+
+            EnsureFolderExists(scriptableFolderPath);
+
+
+            var assetConfig = ScriptableObject.CreateInstance<UIAssetConfig>();
+            assetConfig.Uxml = uxml;
+            assetConfig.PanelSettings = Resources.Load<PanelSettings>("UI/Panel Settings/RuntimePanelSettings");
+
+            var scriptableAssetPath = $"{scriptableFolderPath}{uxml.name}.asset";
+
+
+            AssetDatabase.CreateAsset(assetConfig, scriptableAssetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Selection.activeObject = assetConfig;
+
+            Debug.Log($"Created: {scriptableAssetPath}");
+        }
+
         if (File.Exists($"{Application.dataPath}/Editor/UI/{uxml.name}.cs")) return;
 
         GenerateEditorHeader(builder, uxml.name);
@@ -418,7 +499,7 @@ public class UICodeGenService
 
         var builder = new StringBuilder();
         GenerateGameplayGeneratedHeader(builder, uxml.name);
-        GenerateConstants(builder, uxml, ussStyleSheets, visualElements);
+        GenerateGameplayConstants(builder, visualElements);
         GenerateInClassSpace(builder);
         GenerateGameplayFields(builder, visualElements);
         GenerateInClassSpace(builder);
@@ -437,6 +518,31 @@ public class UICodeGenService
         WriteFile(builder, uxml.name, "Scripts/UI/generated", "generated.cs");
 
         builder.Clear();
+
+        if (!File.Exists($"{Application.dataPath}/Resources/Scriptables/{uxml.name}.asset"))
+        {
+
+            var scriptableFolderPath = $"Assets/Resources/Scriptables/";
+
+
+            EnsureFolderExists(scriptableFolderPath);
+
+
+            var assetConfig = ScriptableObject.CreateInstance<UIAssetConfig>();
+            assetConfig.Uxml = uxml;
+            assetConfig.PanelSettings = Resources.Load<PanelSettings>("UI/Panel Settings/RuntimePanelSettings");
+
+            var scriptableAssetPath = $"{scriptableFolderPath}{uxml.name}.asset";
+
+
+            AssetDatabase.CreateAsset(assetConfig, scriptableAssetPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Selection.activeObject = assetConfig;
+
+            Debug.Log($"Created: {scriptableAssetPath}");
+        }
 
         if (File.Exists($"{Application.dataPath}/Scripts/UI/{uxml.name}.cs")) return;
 

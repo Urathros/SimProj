@@ -10,6 +10,7 @@ public sealed class UICodeGenMonitor : AssetPostprocessor
     private static UICodeGenCache _cache = null;
     private static UICodeGenService _service = null;
 
+
     public static bool IsGenerating { get; set; } = false;
     static UICodeGenMonitor()
     {
