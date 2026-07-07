@@ -228,7 +228,7 @@ public class UICodeGenService
                .AppendLine("\tprivate UIAssetConfig _config = null;")
                .AppendLine()
                .AppendLine("\t[SerializeField]")
-               .AppendLine("private PanelSettings _panelSettings = null;")
+               .AppendLine("\tprivate PanelSettings _panelSettings = null;")
                .AppendLine()
                .AppendLine("\t[SerializeField]")
                .AppendLine("\tprivate VisualTreeAsset _uxml = null;")

@@ -18,6 +18,7 @@ public partial class InGameHUD : MonoBehaviour
 	/*************************************************************************/
 	#region Constants
 	/*************************************************************************/
+	private const string ElementName_Root = "Root";
 	private const string ElementName_TimeXQuadruple = "TimeXQuadruple";
 	private const string ElementName_TimeXDouble = "TimeXDouble";
 	private const string ElementName_TimeXHalf = "TimeXHalf";
@@ -35,6 +36,7 @@ public partial class InGameHUD : MonoBehaviour
 	/*************************************************************************/
 	#region Fields
 	/*************************************************************************/
+	private VisualElement _Root = null;
 	private Button _TimeXQuadruple = null;
 	private Button _TimeXDouble = null;
 	private Button _TimeXHalf = null;
@@ -49,7 +51,7 @@ public partial class InGameHUD : MonoBehaviour
 	private UIAssetConfig _config = null;
 
 	[SerializeField]
-private PanelSettings _panelSettings = null;
+	private PanelSettings _panelSettings = null;
 
 	[SerializeField]
 	private VisualTreeAsset _uxml = null;
@@ -103,6 +105,7 @@ private PanelSettings _panelSettings = null;
 		_uiDoc.visualTreeAsset = _uxml;
 		_uxml.CloneTree(_rootVisualElement);
 
+		_Root = _rootVisualElement.Q<VisualElement>(ElementName_Root) as VisualElement;
 		_TimeXQuadruple = RequireButton(ElementName_TimeXQuadruple);
 		_TimeXDouble = RequireButton(ElementName_TimeXDouble);
 		_TimeXHalf = RequireButton(ElementName_TimeXHalf);
