@@ -1,5 +1,5 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement name="Root" style="flex-grow: 1; left: 5%; bottom: auto; right: auto; top: 68%; position: relative; width: 393px; align-self: auto;">
+    <ui:VisualElement name="Root" style="flex-grow: 1; left: 3%; bottom: auto; right: auto; top: 68%; position: relative; width: 393px; align-self: auto;">
         <ui:Label text="None" name="Weekday" style="border-top-left-radius: 0; border-top-right-radius: 0; border-bottom-right-radius: 0; border-bottom-left-radius: 0; border-left-color: rgb(255, 255, 255); border-right-color: rgb(255, 255, 255); border-top-color: rgb(255, 255, 255); border-bottom-color: rgb(255, 255, 255); color: rgb(255, 255, 255); -unity-text-outline-width: 0; font-size: 14px;"/>
         <ui:Label text="XX:XX Uhr" name="Time" style="-unity-text-outline-width: 0; color: rgb(255, 255, 255);"/>
         <ui:Label text="None" name="DayPhase" style="-unity-text-outline-width: 0; color: rgb(255, 255, 255);"/>
