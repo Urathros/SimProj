@@ -48,6 +48,9 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 
 
 
+
+
+
 	private void LoadAssets()
 	{
 		var path = string.Empty;
@@ -75,6 +78,10 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 		return elem;
 	}
 
+	private void InitializeEvents()
+	{
+	}
+
 	protected void InitializeComponents()
 	{
 		LoadAssets();
@@ -87,5 +94,7 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 		_countLabel = Require<Label>(ElementName_CountLabel);
 		_statusLabel = Require<Label>(ElementName_StatusLabel);
 		_title = Require<Label>(ElementName_Title);
+
+		InitializeEvents();
 }
 }

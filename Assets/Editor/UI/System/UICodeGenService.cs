@@ -11,6 +11,7 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using static UnityEngine.Rendering.STP;
 
+
 public class UICodeGenService
 {
 
@@ -49,6 +50,22 @@ public class UICodeGenService
         return result;
     }
 
+    private List<UxmlEventBinding> ExtractClickBindings(IEnumerable<VisualElement> visualElements)
+    {
+        var result = new List<UxmlEventBinding>();
+
+        foreach (var elem in visualElements)
+        {
+            if (string.IsNullOrWhiteSpace(elem.name)) continue;
+
+            if(elem is IUICodeGenClickable clickable && !string.IsNullOrWhiteSpace(clickable.CodeGenClick))
+            {
+                result.Add(new UxmlEventBinding { ElementName = elem.name, HandlerName = clickable.CodeGenClick });
+            }
+        }
+
+        return result;
+    }
 
     private string SanitizeVariableName(string input)
     {
@@ -254,6 +271,28 @@ public class UICodeGenService
                .AppendLine("\t/*************************************************************************/");
     }
 
+    private void GenerateGeneratedClickableCallbacks(IEnumerable<UxmlEventBinding> bindings)
+    {
+        foreach (var binding in bindings)
+        {
+            _builder.AppendLine($"\tpartial void {binding.HandlerName}(ClickEvent e);");
+        }
+    }
+
+
+
+    private void GenerateClickableCallbacks(IEnumerable<UxmlEventBinding> bindings)
+    {
+        foreach (var binding in bindings)
+        {
+            _builder.AppendLine($"\tpartial void {binding.HandlerName}(ClickEvent e)")
+                    .AppendLine("\t{")
+                    .AppendLine("\t}")
+                    .AppendLine();
+
+        }
+    }
+
     private void GenerateLoadAssetsEditorFunction()
     {
         _builder.AppendLine("\tprivate void LoadAssets()")
@@ -311,6 +350,21 @@ public class UICodeGenService
                 .AppendLine("\t}");
     }
 
+    private void GenerateInitializeEventsFunction(IEnumerable<UxmlEventBinding> bindings)
+    {
+        _builder.AppendLine("\tprivate void InitializeEvents()");
+        _builder.AppendLine("\t{");
+
+        foreach (var binding in bindings)
+        {
+            var fieldName = "_" + SanitizeVariableName(binding.ElementName);
+
+            _builder.AppendLine($"\t\t{fieldName}.RegisterCallback<ClickEvent>({binding.HandlerName});");
+        }
+
+        _builder.AppendLine("\t}");
+    }
+
     private void GenerateInitializeComponentsEditorFunction(IEnumerable<VisualElement> visualElements)
     {
         _builder.AppendLine("\tprotected void InitializeComponents()")
@@ -329,7 +383,9 @@ public class UICodeGenService
         }
 
 
-        _builder.AppendLine("}");
+        _builder.AppendLine()
+                .AppendLine("\t\tInitializeEvents();")
+                .AppendLine("}");
     }
 
     private void GenerateInitializeComponentsGameplayFunction(IEnumerable<VisualElement> visualElements)
@@ -352,10 +408,12 @@ public class UICodeGenService
 
             var sanitizedName = SanitizeVariableName(elem.name);
             _builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = Require<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
+
         }
 
-
-        _builder.AppendLine("}");
+        _builder.AppendLine()
+                .AppendLine("\t\tInitializeEvents();")
+                .AppendLine("}");
     }
 
     private void GenerateShowWindowFunction(string name)
@@ -427,6 +485,7 @@ public class UICodeGenService
 
         var root = uxml.Instantiate();
         var visualElements = ExtractVisualElements(root);
+        var clickBindings = ExtractClickBindings(visualElements);
 
         _validator.Validate(uxml, visualElements);
 
@@ -436,11 +495,15 @@ public class UICodeGenService
         GenerateInClassSpace();
         GenerateEditorFields(visualElements);
         GenerateInClassSpace();
+        GenerateGeneratedClickableCallbacks(clickBindings);
+        GenerateInClassSpace();
         GenerateLoadAssetsEditorFunction();
         _builder.AppendLine();
         GenerateShowWindowFunction(uxml.name);
         _builder.AppendLine();
         GenerateRequireEditorMethod();
+        _builder.AppendLine();
+        GenerateInitializeEventsFunction(clickBindings);
         _builder.AppendLine();
         GenerateInitializeComponentsEditorFunction(visualElements);
 
@@ -480,6 +543,8 @@ public class UICodeGenService
         if (File.Exists($"{Application.dataPath}/Editor/UI/{uxml.name}.cs")) return;
 
         GenerateEditorHeader(uxml.name);
+        GenerateClickableCallbacks(clickBindings);
+        GenerateInClassSpace();
         GenerateCreateGUIFunction();
         _builder.AppendLine("}");
 
@@ -495,6 +560,7 @@ public class UICodeGenService
 
         var root = uxml.Instantiate();
         var visualElements = ExtractVisualElements(root);
+        var clickBindings = ExtractClickBindings(visualElements);
 
         _validator.Validate(uxml, visualElements);
 
@@ -504,9 +570,13 @@ public class UICodeGenService
         GenerateInClassSpace();
         GenerateGameplayFields(visualElements);
         GenerateInClassSpace();
+        GenerateGeneratedClickableCallbacks(clickBindings);
+        GenerateInClassSpace();
         GenerateLoadAssetsGameplayFunction(uxml.name);
         _builder.AppendLine();
         GenerateRequireGameplayMethod();
+        _builder.AppendLine();
+        GenerateInitializeEventsFunction(clickBindings);
         _builder.AppendLine();
         GenerateInitializeComponentsGameplayFunction(visualElements);
 
@@ -544,6 +614,8 @@ public class UICodeGenService
         if (File.Exists($"{Application.dataPath}/Scripts/UI/{uxml.name}.cs")) return;
 
         GenerateGameplayHeader(uxml.name);
+        GenerateClickableCallbacks(clickBindings);
+        GenerateInClassSpace();
         GenerateAwakeFunction();
         _builder.AppendLine("}");
 

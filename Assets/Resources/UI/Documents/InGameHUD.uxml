@@ -5,9 +5,9 @@
         <ui:Label text="None" name="DayPhase" style="-unity-text-outline-width: 0; color: rgb(255, 255, 255);"/>
         <ui:Label text="XX°C" name="Temprature" style="-unity-text-outline-width: 0; color: rgb(255, 255, 255);"/>
         <ui:Label text="None" name="Weather" style="-unity-text-outline-width: 0; color: rgb(255, 255, 255);"/>
-        <ui:Button text="Start/Pause" name="StartPause"/>
-        <ui:Button text="x2" name="TimeXHalf"/>
-        <ui:Button text="x2" name="TimeXDouble"/>
-        <ui:Button text="x4" name="TimeXQuadruple"/>
+        <Button name="StartPause" text="Start/Pause" codegen-click="HandleStartPauseClick"/>
+        <Button name="TimeXHalf" text="x0.5" codegen-click="HandleTimeXHalfClick"/>
+        <Button name="TimeXDouble" text="x2" codegen-click="HandleTimeXDoubleClick"/>
+        <Button name="TimeXQuadruple" text="x4" codegen-click="HandleTimeXQuadrupleClick"/>
     </ui:VisualElement>
 </ui:UXML>

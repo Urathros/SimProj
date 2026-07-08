@@ -37,10 +37,10 @@ public partial class InGameHUD : MonoBehaviour
 	#region Fields
 	/*************************************************************************/
 	private VisualElement _Root = null;
-	private Button _TimeXQuadruple = null;
-	private Button _TimeXDouble = null;
-	private Button _TimeXHalf = null;
-	private Button _StartPause = null;
+	private UICodeGenButton _TimeXQuadruple = null;
+	private UICodeGenButton _TimeXDouble = null;
+	private UICodeGenButton _TimeXHalf = null;
+	private UICodeGenButton _StartPause = null;
 	private Label _Weather = null;
 	private Label _Temprature = null;
 	private Label _DayPhase = null;
@@ -63,6 +63,13 @@ public partial class InGameHUD : MonoBehaviour
 	private UIDocument _uiDoc = null;
 	#endregion
 	/*************************************************************************/
+
+
+
+	partial void HandleTimeXQuadrupleClick(ClickEvent e);
+	partial void HandleTimeXDoubleClick(ClickEvent e);
+	partial void HandleTimeXHalfClick(ClickEvent e);
+	partial void HandleStartPauseClick(ClickEvent e);
 
 
 
@@ -93,6 +100,14 @@ public partial class InGameHUD : MonoBehaviour
 		return elem;
 	}
 
+	private void InitializeEvents()
+	{
+		_TimeXQuadruple.RegisterCallback<ClickEvent>(HandleTimeXQuadrupleClick);
+		_TimeXDouble.RegisterCallback<ClickEvent>(HandleTimeXDoubleClick);
+		_TimeXHalf.RegisterCallback<ClickEvent>(HandleTimeXHalfClick);
+		_StartPause.RegisterCallback<ClickEvent>(HandleStartPauseClick);
+	}
+
 	protected void InitializeComponents()
 	{
 		LoadAssets();
@@ -105,14 +120,16 @@ public partial class InGameHUD : MonoBehaviour
 		_uxml.CloneTree(_rootVisualElement);
 
 		_Root = Require<VisualElement>(ElementName_Root);
-		_TimeXQuadruple = Require<Button>(ElementName_TimeXQuadruple);
-		_TimeXDouble = Require<Button>(ElementName_TimeXDouble);
-		_TimeXHalf = Require<Button>(ElementName_TimeXHalf);
-		_StartPause = Require<Button>(ElementName_StartPause);
+		_TimeXQuadruple = Require<UICodeGenButton>(ElementName_TimeXQuadruple);
+		_TimeXDouble = Require<UICodeGenButton>(ElementName_TimeXDouble);
+		_TimeXHalf = Require<UICodeGenButton>(ElementName_TimeXHalf);
+		_StartPause = Require<UICodeGenButton>(ElementName_StartPause);
 		_Weather = Require<Label>(ElementName_Weather);
 		_Temprature = Require<Label>(ElementName_Temprature);
 		_DayPhase = Require<Label>(ElementName_DayPhase);
 		_Time = Require<Label>(ElementName_Time);
 		_Weekday = Require<Label>(ElementName_Weekday);
+
+		InitializeEvents();
 }
 }
