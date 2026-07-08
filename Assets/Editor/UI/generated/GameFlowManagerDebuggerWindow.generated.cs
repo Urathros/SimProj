@@ -66,15 +66,14 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 		wnd.Show();
 	}
 
-	private Button RequireButton(string name)
+	private T Require<T>(string name) where T : VisualElement
 	{
-		var elem = rootVisualElement.Q<Button>(name);
+		var elem = rootVisualElement.Q<T>(name);
 		if (elem == null)
 			throw new InvalidOperationException($"Required UI element '{name}' of type Button was not found.");
 
 		return elem;
 	}
-
 
 	protected void InitializeComponents()
 	{
@@ -82,11 +81,11 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 
 		_uxml.CloneTree(rootVisualElement);
 
-		_root = rootVisualElement.Q<VisualElement>(ElementName_Root) as VisualElement;
-		_refreshButton = RequireButton(ElementName_RefreshButton);
-		_flowList = rootVisualElement.Q<ListView>(ElementName_FlowList) as ListView;
-		_countLabel = rootVisualElement.Q<Label>(ElementName_CountLabel) as Label;
-		_statusLabel = rootVisualElement.Q<Label>(ElementName_StatusLabel) as Label;
-		_title = rootVisualElement.Q<Label>(ElementName_Title) as Label;
+		_root = Require<VisualElement>(ElementName_Root);
+		_refreshButton = Require<Button>(ElementName_RefreshButton);
+		_flowList = Require<ListView>(ElementName_FlowList);
+		_countLabel = Require<Label>(ElementName_CountLabel);
+		_statusLabel = Require<Label>(ElementName_StatusLabel);
+		_title = Require<Label>(ElementName_Title);
 }
 }

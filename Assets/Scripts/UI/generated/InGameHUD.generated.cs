@@ -84,15 +84,14 @@ public partial class InGameHUD : MonoBehaviour
 			throw new InvalidOperationException("Unable to load UXML.");
 	}
 
-	private Button RequireButton(string name)
+	private T Require<T>(string name) where T : VisualElement
 	{
-		var elem = _rootVisualElement.Q<Button>(name);
+		var elem = _rootVisualElement.Q<T>(name);
 		if (elem == null)
 			throw new InvalidOperationException($"Required UI element '{name}' of type Button was not found.");
 
 		return elem;
 	}
-
 
 	protected void InitializeComponents()
 	{
@@ -105,15 +104,15 @@ public partial class InGameHUD : MonoBehaviour
 		_uiDoc.visualTreeAsset = _uxml;
 		_uxml.CloneTree(_rootVisualElement);
 
-		_Root = _rootVisualElement.Q<VisualElement>(ElementName_Root) as VisualElement;
-		_TimeXQuadruple = RequireButton(ElementName_TimeXQuadruple);
-		_TimeXDouble = RequireButton(ElementName_TimeXDouble);
-		_TimeXHalf = RequireButton(ElementName_TimeXHalf);
-		_StartPause = RequireButton(ElementName_StartPause);
-		_Weather = _rootVisualElement.Q<Label>(ElementName_Weather) as Label;
-		_Temprature = _rootVisualElement.Q<Label>(ElementName_Temprature) as Label;
-		_DayPhase = _rootVisualElement.Q<Label>(ElementName_DayPhase) as Label;
-		_Time = _rootVisualElement.Q<Label>(ElementName_Time) as Label;
-		_Weekday = _rootVisualElement.Q<Label>(ElementName_Weekday) as Label;
+		_Root = Require<VisualElement>(ElementName_Root);
+		_TimeXQuadruple = Require<Button>(ElementName_TimeXQuadruple);
+		_TimeXDouble = Require<Button>(ElementName_TimeXDouble);
+		_TimeXHalf = Require<Button>(ElementName_TimeXHalf);
+		_StartPause = Require<Button>(ElementName_StartPause);
+		_Weather = Require<Label>(ElementName_Weather);
+		_Temprature = Require<Label>(ElementName_Temprature);
+		_DayPhase = Require<Label>(ElementName_DayPhase);
+		_Time = Require<Label>(ElementName_Time);
+		_Weekday = Require<Label>(ElementName_Weekday);
 }
 }

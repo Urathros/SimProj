@@ -277,26 +277,22 @@ public class UICodeGenService
                .AppendLine("\t\t\tthrow new InvalidOperationException(\"Unable to load UXML.\");")
                .AppendLine("\t}");
     }
-
-    private void GenerateRequireButtonEditorFunction(StringBuilder builder)
+    private void GenerateRequireEditorMethod(StringBuilder builder)
     {
-        builder.AppendLine("\tprivate Button RequireButton(string name)")
+        builder.AppendLine("\tprivate T Require<T>(string name) where T : VisualElement")
                .AppendLine("\t{")
-               .AppendLine("\t\tvar elem = rootVisualElement.Q<Button>(name);")
+               .AppendLine("\t\tvar elem = rootVisualElement.Q<T>(name);")
                .AppendLine("\t\tif (elem == null)")
                .AppendLine("\t\t\tthrow new InvalidOperationException($\"Required UI element '{name}' of type Button was not found.\");")
                .AppendLine()
                .AppendLine("\t\treturn elem;")
                .AppendLine("\t}");
     }
-
-
-
-    private void GenerateRequireButtonGameplayFunction(StringBuilder builder)
+    private void GenerateRequireGameplayMethod(StringBuilder builder)
     {
-        builder.AppendLine("\tprivate Button RequireButton(string name)")
+        builder.AppendLine("\tprivate T Require<T>(string name) where T : VisualElement")
                .AppendLine("\t{")
-               .AppendLine("\t\tvar elem = _rootVisualElement.Q<Button>(name);")
+               .AppendLine("\t\tvar elem = _rootVisualElement.Q<T>(name);")
                .AppendLine("\t\tif (elem == null)")
                .AppendLine("\t\t\tthrow new InvalidOperationException($\"Required UI element '{name}' of type Button was not found.\");")
                .AppendLine()
@@ -318,11 +314,7 @@ public class UICodeGenService
             if (string.IsNullOrWhiteSpace(elem.name)) continue;
 
             var sanitizedName = SanitizeVariableName(elem.name);
-            if(elem is Button button)
-            {
-                builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = RequireButton(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
-            }
-            else builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = rootVisualElement.Q<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)}) as {elem.GetType().Name};");
+            builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = Require<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
         }
 
 
@@ -348,9 +340,7 @@ public class UICodeGenService
             if (string.IsNullOrWhiteSpace(elem.name)) continue;
 
             var sanitizedName = SanitizeVariableName(elem.name);
-            if (elem is Button button)
-                builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = RequireButton(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
-            else builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = _rootVisualElement.Q<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)}) as {elem.GetType().Name};");
+            builder.AppendLine($"\t\t_{SanitizeVariableName(elem.name)} = Require<{elem.GetType().Name}>(ElementName_{char.ToUpper(sanitizedName[0])}{sanitizedName.Substring(1)});");
         }
 
 
@@ -437,11 +427,7 @@ public class UICodeGenService
         builder.AppendLine();
         GenerateShowWindowFunction(builder, uxml.name);
         builder.AppendLine();
-        if(root.Query<Button>().First() != null)
-        {
-            GenerateRequireButtonEditorFunction(builder);
-            builder.AppendLine();
-        }
+        GenerateRequireEditorMethod(builder);
         builder.AppendLine();
         GenerateInitializeComponentsEditorFunction(builder, visualElements);
 
@@ -505,11 +491,7 @@ public class UICodeGenService
         GenerateInClassSpace(builder);
         GenerateLoadAssetsGameplayFunction(builder, uxml.name);
         builder.AppendLine();
-        if (root.Query<Button>().First() != null)
-        {
-            GenerateRequireButtonGameplayFunction(builder);
-            builder.AppendLine();
-        }
+        GenerateRequireGameplayMethod(builder);
         builder.AppendLine();
         GenerateInitializeComponentsGameplayFunction(builder, visualElements);
 
@@ -531,7 +513,7 @@ public class UICodeGenService
             var assetConfig = ScriptableObject.CreateInstance<UIAssetConfig>();
             assetConfig.Uxml = uxml;
             assetConfig.PanelSettings = Resources.Load<PanelSettings>("UI/Panel Settings/RuntimePanelSettings");
-
+             
             var scriptableAssetPath = $"{scriptableFolderPath}{uxml.name}.asset";
 
 
