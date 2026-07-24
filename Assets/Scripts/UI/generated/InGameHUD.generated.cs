@@ -11,6 +11,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Collections.Generic;
 
 [RequireComponent(typeof(UIDocument))]
 public partial class InGameHUD : MonoBehaviour
@@ -47,6 +48,9 @@ public partial class InGameHUD : MonoBehaviour
 	private Label _Time = null;
 	private Label _Weekday = null;
 
+	private object _dataContext = null;
+	private readonly List<IDisposable> _dataBindings = new();
+
 	[SerializeField]
 	private UIAssetConfig _config = null;
 
@@ -66,10 +70,48 @@ public partial class InGameHUD : MonoBehaviour
 
 
 
+	/*************************************************************************/
+	#region Properties
+	/*************************************************************************/
+
+	public object DataContext
+	{
+		get => _dataContext;
+		set
+		{
+		if (ReferenceEquals(_dataContext, value)) return;
+
+		UnbindDataContext();
+
+		_dataContext = value;
+
+		BindDataContext();
+		}
+	}
+
+	#endregion
+	/*************************************************************************/
+
+
+
 	partial void HandleTimeXQuadrupleClick(ClickEvent e);
 	partial void HandleTimeXDoubleClick(ClickEvent e);
 	partial void HandleTimeXHalfClick(ClickEvent e);
 	partial void HandleStartPauseClick(ClickEvent e);
+
+
+
+	private void BindDataContext()
+	{
+		if (_dataContext == null) return;
+		InitializeGeneratedBindings();
+	}
+
+	private void UnbindDataContext()
+	{
+		foreach (var binding in _dataBindings) binding.Dispose();
+		_dataBindings.Clear();
+	}
 
 
 
@@ -90,6 +132,11 @@ public partial class InGameHUD : MonoBehaviour
 		if (_uxml == null)
 			throw new InvalidOperationException("Unable to load UXML.");
 	}
+
+	private void InitializeGeneratedBindings()
+	{
+	}
+
 
 	private T Require<T>(string name) where T : VisualElement
 	{

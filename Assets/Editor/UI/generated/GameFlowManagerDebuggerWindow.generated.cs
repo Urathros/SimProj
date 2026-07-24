@@ -12,6 +12,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEditor;
+using System.Collections.Generic;
 
 public partial class GameFlowManagerDebuggerWindow : EditorWindow
 {
@@ -41,6 +42,9 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 	private Label _statusLabel = null;
 	private Label _title = null;
 
+	private object _dataContext = null;
+	private readonly List<IDisposable> _dataBindings = new();
+
 	[SerializeField]
 	private VisualTreeAsset _uxml = null;
 	#endregion
@@ -48,6 +52,44 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 
 
 
+	/*************************************************************************/
+	#region Properties
+	/*************************************************************************/
+
+	public object DataContext
+	{
+		get => _dataContext;
+		set
+		{
+		if (ReferenceEquals(_dataContext, value)) return;
+
+		UnbindDataContext();
+
+		_dataContext = value;
+
+		BindDataContext();
+		}
+	}
+
+	#endregion
+	/*************************************************************************/
+
+
+
+
+
+
+	private void BindDataContext()
+	{
+		if (_dataContext == null) return;
+		InitializeGeneratedBindings();
+	}
+
+	private void UnbindDataContext()
+	{
+		foreach (var binding in _dataBindings) binding.Dispose();
+		_dataBindings.Clear();
+	}
 
 
 
@@ -60,6 +102,11 @@ public partial class GameFlowManagerDebuggerWindow : EditorWindow
 			_uxml = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(path);
 		}
 	}
+
+	private void InitializeGeneratedBindings()
+	{
+	}
+
 
 	[MenuItem("Tools/GameFlowManagerDebuggerWindow")]
 	public static void OpenWindow()

@@ -17,7 +17,7 @@ public sealed class GameFlowManager : IDisposable, IReflectable, IDebugUI
     private void NotifyDebugStateChanged()
     {
 #if UNITY_EDITOR
-        DebugStateChangedDel?.Invoke();
+        DebugStateChangedDel.Invoke();
 #endif
     }
 

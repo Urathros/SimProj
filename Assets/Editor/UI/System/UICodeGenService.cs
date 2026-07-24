@@ -9,7 +9,6 @@ using UnityEditor;
 using UnityEditor.Search;
 using UnityEngine;
 using UnityEngine.UIElements;
-using static UnityEngine.Rendering.STP;
 
 
 public class UICodeGenService
@@ -67,6 +66,76 @@ public class UICodeGenService
         return result;
     }
 
+    private List<UxmlDataBinding> ExtractDataBindings(IEnumerable<VisualElement> visualElements)
+    {
+        var result = new List<UxmlDataBinding>();
+
+        foreach (var elem in visualElements)
+        {
+            if (string.IsNullOrWhiteSpace(elem.name)) continue;
+
+            if(     elem is IUICodeGenBindable bindable 
+                && !string.IsNullOrWhiteSpace(bindable.BindName)
+                && bindable.BindMode != UICodeGenBindMode.None)
+            {
+                result.Add(new UxmlDataBinding
+                {
+                    ElementName = elem.name,
+                    ElementType = elem.GetType(),
+                    SourcePath = bindable.BindName,
+                    TargetProperty = bindable.BindingTargetProperty,
+                    BindMode = bindable.BindMode,
+                    BindKind = UICodeGenBindKind.Value
+                });
+            }
+
+            if (    elem is IUICodeGenItemsSource itemsSource
+                 && !string.IsNullOrWhiteSpace(itemsSource.ItemsSourceBinding))
+            {
+                result.Add(new UxmlDataBinding
+                {
+                    ElementName = elem.name,
+                    ElementType = elem.GetType(),
+                    SourcePath = itemsSource.ItemsSourceBinding,
+                    TargetProperty = nameof(itemsSource),
+                    BindMode = UICodeGenBindMode.OneWay,
+                    BindKind = UICodeGenBindKind.ItemsSource
+                });
+            }
+
+            if (elem is IUICodeGenSelectionBindable selection)
+            {
+                if (!string.IsNullOrWhiteSpace(selection.SelectedItemBinding))
+                {
+                    result.Add(new UxmlDataBinding
+                    {
+                        ElementName = elem.name,
+                        ElementType = elem.GetType(),
+                        SourcePath = selection.SelectedItemBinding,
+                        TargetProperty = "selectedItem",
+                        BindMode = UICodeGenBindMode.TwoWay,
+                        BindKind = UICodeGenBindKind.SelectedItem
+                    });
+                }
+
+                if (!string.IsNullOrWhiteSpace(selection.SelectedIndexBinding))
+                {
+                    result.Add(new UxmlDataBinding
+                    {
+                        ElementName = elem.name,
+                        ElementType = elem.GetType(),
+                        SourcePath = selection.SelectedIndexBinding,
+                        TargetProperty = "selectedIndex",
+                        BindMode = UICodeGenBindMode.TwoWay,
+                        BindKind = UICodeGenBindKind.SelectedIndex
+                    });
+                }
+            }
+        }
+
+        return result;
+    }
+
     private string SanitizeVariableName(string input)
     {
         var result = new StringBuilder();
@@ -116,6 +185,7 @@ public class UICodeGenService
                 .AppendLine("using UnityEngine;")
                 .AppendLine("using UnityEngine.UIElements;")
                 .AppendLine("using UnityEditor;")
+                .AppendLine("using System.Collections.Generic;")
                 .AppendLine()
                 .AppendLine($"public partial class {name} : EditorWindow")
                 .AppendLine("{");
@@ -149,6 +219,7 @@ public class UICodeGenService
                 .AppendLine("using System;")
                 .AppendLine("using UnityEngine;")
                 .AppendLine("using UnityEngine.UIElements;")
+                .AppendLine("using System.Collections.Generic;")
                 .AppendLine()
                 .AppendLine("[RequireComponent(typeof(UIDocument))]")
                 .AppendLine($"public partial class {name} : MonoBehaviour")
@@ -227,6 +298,9 @@ public class UICodeGenService
         }
 
         _builder.AppendLine()
+                .AppendLine("\tprivate object _dataContext = null;")
+                .AppendLine("\tprivate readonly List<IDisposable> _dataBindings = new();")
+                .AppendLine()
                 .AppendLine("\t[SerializeField]")
                 .AppendLine("\tprivate VisualTreeAsset _uxml = null;");
 
@@ -252,6 +326,9 @@ public class UICodeGenService
         }
 
         _builder.AppendLine()
+                .AppendLine("\tprivate object _dataContext = null;")
+                .AppendLine("\tprivate readonly List<IDisposable> _dataBindings = new();")
+                .AppendLine()
                 .AppendLine("\t[SerializeField]")
                 .AppendLine("\tprivate UIAssetConfig _config = null;")
                 .AppendLine()
@@ -269,6 +346,31 @@ public class UICodeGenService
 
         _builder.AppendLine("\t#endregion")
                .AppendLine("\t/*************************************************************************/");
+    }
+
+    private void GenerateProperties()
+    {
+        _builder.AppendLine("\t/*************************************************************************/")
+                .AppendLine("\t#region Properties")
+                .AppendLine("\t/*************************************************************************/")
+                .AppendLine()
+                .AppendLine("\tpublic object DataContext")
+                .AppendLine("\t{")
+                .AppendLine("\t\tget => _dataContext;")
+                .AppendLine("\t\tset")
+                .AppendLine("\t\t{")
+                .AppendLine("\t\tif (ReferenceEquals(_dataContext, value)) return;")
+                .AppendLine()
+                .AppendLine("\t\tUnbindDataContext();")
+                .AppendLine()
+                .AppendLine("\t\t_dataContext = value;")
+                .AppendLine()
+                .AppendLine("\t\tBindDataContext();")
+                .AppendLine("\t\t}")
+                .AppendLine("\t}")
+                .AppendLine()
+                .AppendLine("\t#endregion")
+                .AppendLine("\t/*************************************************************************/");
     }
 
     private void GenerateGeneratedClickableCallbacks(IEnumerable<UxmlEventBinding> bindings)
@@ -291,6 +393,21 @@ public class UICodeGenService
                     .AppendLine();
 
         }
+    }
+
+    private void GenerateBindingContext()
+    {
+        _builder.AppendLine("\tprivate void BindDataContext()")
+                .AppendLine("\t{")
+                .AppendLine("\t\tif (_dataContext == null) return;")
+                .AppendLine("\t\tInitializeGeneratedBindings();")
+                .AppendLine("\t}")
+                .AppendLine()
+                .AppendLine("\tprivate void UnbindDataContext()")
+                .AppendLine("\t{")
+                .AppendLine("\t\tforeach (var binding in _dataBindings) binding.Dispose();")
+                .AppendLine("\t\t_dataBindings.Clear();")
+                .AppendLine("\t}");
     }
 
     private void GenerateLoadAssetsEditorFunction()
@@ -327,6 +444,70 @@ public class UICodeGenService
                 .AppendLine("\t\t\tthrow new InvalidOperationException(\"Unable to load UXML.\");")
                 .AppendLine("\t}");
     }
+
+    private string EscapeString(string value)
+    {
+        return value.Replace("\\", "\\\\")
+                    .Replace("\"", "\\\"");
+    }
+
+    private void GenerateDataBindingInitialisationFunction(IEnumerable<UxmlDataBinding> bindings)
+    {
+        _builder.AppendLine("\tprivate void InitializeGeneratedBindings()")
+                .AppendLine("\t{");
+
+        foreach (var binding in bindings)
+        {
+            var fieldName = $"_{SanitizeVariableName(binding.ElementName)}";
+
+            switch (binding.BindKind)
+            {
+                case UICodeGenBindKind.Value:
+                    _builder.AppendLine( $"\t\t_dataBindings.Add(" +
+                                         $"UICodeGenBindingFactory.Bind(" +
+                                         $"_dataContext, " +
+                                         $"\"{EscapeString(binding.SourcePath)}\", " +
+                                         $"{fieldName}, " +
+                                         $"\"{EscapeString(binding.TargetProperty)}\", " +
+                                         $"UICodeGenBindMode.{binding.BindMode}));");
+                    break;
+
+                case UICodeGenBindKind.ItemsSource:
+                    _builder.AppendLine( $"\t\t_dataBindings.Add(" +
+                                         $"UICodeGenBindingFactory.BindItemsSource(" +
+                                         $"_dataContext, " +
+                                         $"\"{EscapeString(binding.SourcePath)}\", " +
+                                         $"{fieldName}));");
+                    break;
+
+                case UICodeGenBindKind.SelectedItem:
+                    _builder.AppendLine( $"\t\t_dataBindings.Add(" +
+                                         $"UICodeGenBindingFactory.BindSelectedItem(" +
+                                         $"_dataContext, " +
+                                         $"\"{EscapeString(binding.SourcePath)}\", " +
+                                         $"{fieldName}));");
+                    break;
+
+                case UICodeGenBindKind.SelectedIndex:
+                    _builder.AppendLine( $"\t\t_dataBindings.Add(" +
+                                         $"UICodeGenBindingFactory.BindSelectedIndex(" +
+                                         $"_dataContext, " +
+                                         $"\"{EscapeString(binding.SourcePath)}\", " +
+                                         $"{fieldName}));");
+                    break;
+
+                case UICodeGenBindKind.None: //break
+                default:
+                    throw new ArgumentOutOfRangeException( nameof(binding.BindKind),
+                                                           binding.BindKind,
+                                                           "Unsupported data-binding kind.");
+            }
+        }
+
+        _builder.AppendLine("\t}")
+                .AppendLine();
+    }
+
     private void GenerateRequireEditorMethod()
     {
         _builder.AppendLine("\tprivate T Require<T>(string name) where T : VisualElement")
@@ -486,6 +667,7 @@ public class UICodeGenService
         var root = uxml.Instantiate();
         var visualElements = ExtractVisualElements(root);
         var clickBindings = ExtractClickBindings(visualElements);
+        var dataBindings = ExtractDataBindings(visualElements);
 
         _validator.Validate(uxml, visualElements);
 
@@ -495,9 +677,15 @@ public class UICodeGenService
         GenerateInClassSpace();
         GenerateEditorFields(visualElements);
         GenerateInClassSpace();
+        GenerateProperties();
+        GenerateInClassSpace();
         GenerateGeneratedClickableCallbacks(clickBindings);
         GenerateInClassSpace();
+        GenerateBindingContext();
+        GenerateInClassSpace();
         GenerateLoadAssetsEditorFunction();
+        _builder.AppendLine();
+        GenerateDataBindingInitialisationFunction(dataBindings);
         _builder.AppendLine();
         GenerateShowWindowFunction(uxml.name);
         _builder.AppendLine();
@@ -561,6 +749,7 @@ public class UICodeGenService
         var root = uxml.Instantiate();
         var visualElements = ExtractVisualElements(root);
         var clickBindings = ExtractClickBindings(visualElements);
+        var dataBindings = ExtractDataBindings(visualElements);
 
         _validator.Validate(uxml, visualElements);
 
@@ -570,9 +759,15 @@ public class UICodeGenService
         GenerateInClassSpace();
         GenerateGameplayFields(visualElements);
         GenerateInClassSpace();
+        GenerateProperties();
+        GenerateInClassSpace();
         GenerateGeneratedClickableCallbacks(clickBindings);
         GenerateInClassSpace();
+        GenerateBindingContext();
+        GenerateInClassSpace();
         GenerateLoadAssetsGameplayFunction(uxml.name);
+        _builder.AppendLine();
+        GenerateDataBindingInitialisationFunction(dataBindings);
         _builder.AppendLine();
         GenerateRequireGameplayMethod();
         _builder.AppendLine();
